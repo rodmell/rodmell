@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Plus } from "lucide-react";
+import { Car, Plus, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -27,6 +27,8 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [files, setFiles] = useState<FileList | null>(null);
 
   const [formData, setFormData] = useState({
     marca: "",
@@ -43,14 +45,34 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     e.preventDefault();
     setLoading(true);
     try {
+      let uploadedPhotos: string[] = [];
+      
+      if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          const fileData = new FormData();
+          fileData.append("file", files[i]);
+          
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            body: fileData,
+          });
+          
+          if (uploadRes.ok) {
+            const blob = await uploadRes.json();
+            uploadedPhotos.push(blob.url);
+          }
+        }
+      }
+
       const res = await fetch("/api/vehicles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, fotos: uploadedPhotos }),
       });
       if (res.ok) {
         setOpen(false);
         setFormData({ marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "" });
+        setFiles(null);
         router.refresh();
       }
     } catch (error) {
@@ -115,6 +137,10 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                   <label className="text-sm font-medium text-zinc-300">Chasis</label>
                   <Input className="bg-[#111] border-[#333]" value={formData.chasis} onChange={e => setFormData({...formData, chasis: e.target.value})} />
                 </div>
+                <div className="space-y-2 col-span-2">
+                  <label className="text-sm font-medium text-zinc-300">Galería de Imágenes</label>
+                  <Input type="file" multiple accept="image/*" className="bg-[#111] border-[#333] cursor-pointer text-zinc-400 file:bg-[#222] file:text-white file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-2" onChange={e => setFiles(e.target.files)} />
+                </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
                 {loading ? "Guardando..." : "Guardar Vehículo"}
@@ -122,6 +148,16 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+        <Input 
+          placeholder="Buscar por marca, modelo o patente..." 
+          className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
@@ -136,14 +172,18 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {vehicles.length === 0 ? (
+            {vehicles.filter(v => 
+              `${v.marca} ${v.modelo} ${v.dominio}`.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
                 <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
                   No hay vehículos registrados
                 </TableCell>
               </TableRow>
             ) : (
-              vehicles.map((v) => (
+              vehicles.filter(v => 
+                `${v.marca} ${v.modelo} ${v.dominio}`.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((v) => (
                 <TableRow key={v.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="font-medium text-white">{v.marca} {v.modelo}</TableCell>
                   <TableCell className="text-zinc-300">{v.anio}</TableCell>

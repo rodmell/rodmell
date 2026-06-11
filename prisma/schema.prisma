@@ -62,6 +62,7 @@ model User {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   operaciones   Operacion[]
+  activityLogs  ActivityLog[]
 }
 
 model Cliente {
@@ -173,4 +174,14 @@ model Documento {
   operacion    Operacion?    @relation(fields: [operacionId], references: [id])
   cliente      Cliente?      @relation(fields: [clienteId], references: [id])
   vehiculo     Vehiculo?     @relation(fields: [vehiculoId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // e.g., "CREATE_VEHICLE", "UPDATE_CUSTOMER"
+  details   String?  // e.g., "Added Audi A4 (DOM-123)"
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
 }

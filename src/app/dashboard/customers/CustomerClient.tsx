@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -27,6 +27,7 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     nombreCompleto: "",
@@ -114,6 +115,16 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
         </Dialog>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+        <Input 
+          placeholder="Buscar por nombre, DNI, teléfono o email..." 
+          className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
         <Table>
           <TableHeader>
@@ -125,14 +136,18 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.length === 0 ? (
+            {customers.filter(c => 
+              `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email}`.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
                 <TableCell colSpan={4} className="text-center py-8 text-zinc-500">
                   No hay clientes registrados
                 </TableCell>
               </TableRow>
             ) : (
-              customers.map((c) => (
+              customers.filter(c => 
+                `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email}`.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((c) => (
                 <TableRow key={c.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="font-medium text-white">{c.nombreCompleto}</TableCell>
                   <TableCell className="text-zinc-300">{c.dni}</TableCell>

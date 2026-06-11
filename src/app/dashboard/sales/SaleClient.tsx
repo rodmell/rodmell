@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeDollarSign, Plus } from "lucide-react";
+import { BadgeDollarSign, Plus, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -27,6 +27,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     clienteId: "",
@@ -123,6 +124,16 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
         </Dialog>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+        <Input 
+          placeholder="Buscar por cliente, vehículo o forma de pago..." 
+          className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
         <Table>
           <TableHeader>
@@ -135,14 +146,18 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sales.length === 0 ? (
+            {sales.filter(s => 
+              `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago}`.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
                 <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
                   No hay ventas registradas
                 </TableCell>
               </TableRow>
             ) : (
-              sales.map((s) => (
+              sales.filter(s => 
+                `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago}`.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((s) => (
                 <TableRow key={s.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="text-zinc-300">{new Date(s.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>

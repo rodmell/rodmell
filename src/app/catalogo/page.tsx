@@ -2,78 +2,21 @@ import Image from "next/image";
 import { Car, Fuel, Gauge, Settings2, CalendarDays } from "lucide-react";
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
+import prisma from "@/lib/prisma";
 
-// Mock Data para el Catálogo
-const vehicles = [
-  {
-    id: 1,
-    make: "Audi",
-    model: "A5 Sportback S-Line",
-    year: 2022,
-    price: 65000,
-    mileage: "12.000",
-    transmission: "Automática",
-    fuel: "Nafta",
-    image: "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    make: "BMW",
-    model: "X4 M Competition",
-    year: 2023,
-    price: 135000,
-    mileage: "5.500",
-    transmission: "Automática",
-    fuel: "Nafta",
-    image: "https://images.unsplash.com/photo-1556800572-1b8aeef2c54f?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    make: "Mercedes-Benz",
-    model: "Clase C 300 AMG",
-    year: 2021,
-    price: 58000,
-    mileage: "24.000",
-    transmission: "Automática",
-    fuel: "Nafta / Híbrido",
-    image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: 4,
-    make: "Porsche",
-    model: "Macan GTS",
-    year: 2022,
-    price: 145000,
-    mileage: "18.000",
-    transmission: "PDK",
-    fuel: "Nafta",
-    image: "https://images.unsplash.com/photo-1503376712341-ea7825b4104a?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: 5,
-    make: "Volkswagen",
-    model: "Amarok V6 Extreme",
-    year: 2023,
-    price: 48000,
-    mileage: "0 (Km)",
-    transmission: "Automática 8v",
-    fuel: "Diésel",
-    image: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: 6,
-    make: "Ford",
-    model: "Mustang GT 5.0",
-    year: 2020,
-    price: 72000,
-    mileage: "15.000",
-    transmission: "Automática",
-    fuel: "Nafta",
-    image: "https://images.unsplash.com/photo-1584345611127-8fb37cb5b520?q=80&w=800&auto=format&fit=crop",
-  },
-];
+export default async function CatalogoPage() {
+  const vehiclesData = await prisma.vehiculo.findMany({
+    where: { estado: "DISPONIBLE" },
+    orderBy: { createdAt: "desc" }
+  });
 
-export default function CatalogoPage() {
+  // Default images for fallback if no photos were uploaded
+  const defaultImages = [
+    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1503376760367-1b61b4fa0323?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80"
+  ];
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-yellow-500/30">
       <PublicHeader />
@@ -94,18 +37,18 @@ export default function CatalogoPage() {
             <div className="flex-1 px-6 border-r border-[#222] hidden md:block">
               <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-1">Marca</p>
               <select className="w-full bg-transparent text-white outline-none font-semibold cursor-pointer appearance-none">
-                <option value="">Todas las marcas</option>
-                <option value="audi">Audi</option>
-                <option value="bmw">BMW</option>
-                <option value="mercedes">Mercedes-Benz</option>
+                <option value="" className="bg-[#111] text-white">Todas las marcas</option>
+                <option value="audi" className="bg-[#111] text-white">Audi</option>
+                <option value="bmw" className="bg-[#111] text-white">BMW</option>
+                <option value="mercedes" className="bg-[#111] text-white">Mercedes-Benz</option>
               </select>
             </div>
             <div className="flex-1 px-6 border-r border-[#222] hidden md:block">
               <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-1">Precio Max</p>
               <select className="w-full bg-transparent text-white outline-none font-semibold cursor-pointer appearance-none">
-                <option value="">Sin Límite</option>
-                <option value="50000">Hasta $50,000</option>
-                <option value="100000">Hasta $100,000</option>
+                <option value="" className="bg-[#111] text-white">Sin Límite</option>
+                <option value="50000" className="bg-[#111] text-white">Hasta $50,000</option>
+                <option value="100000" className="bg-[#111] text-white">Hasta $100,000</option>
               </select>
             </div>
             <div className="px-2 w-full md:w-auto">
@@ -124,67 +67,78 @@ export default function CatalogoPage() {
             <Car className="h-6 w-6 text-yellow-500" />
             Stock Disponible
           </h2>
-          <span className="text-zinc-400 text-sm font-medium">{vehicles.length} vehículos encontrados</span>
+          <span className="text-zinc-400 text-sm font-medium">{vehiclesData.length} vehículos encontrados</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((car) => (
-            <div key={car.id} className="group relative bg-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden transition-all hover:-translate-y-2 hover:border-yellow-500/50 hover:shadow-[0_10px_40px_-10px_rgba(234,179,8,0.15)]">
-              {/* Image Container */}
-              <div className="relative h-64 w-full overflow-hidden bg-[#111]">
-                <Image 
-                  src={car.image} 
-                  alt={`${car.make} ${car.model}`}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
-                />
-                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full">
-                  <span className="text-yellow-500 font-bold text-sm">{car.year}</span>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 relative">
-                {/* Glow Effect */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-zinc-400 text-sm uppercase tracking-wider font-semibold mb-1">{car.make}</h3>
-                    <h2 className="text-xl font-bold text-white leading-tight">{car.model}</h2>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-yellow-500">${car.price.toLocaleString()}</p>
-                    <p className="text-xs text-zinc-500">USD</p>
-                  </div>
-                </div>
-
-                {/* Badges/Specs */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="flex items-center gap-2 text-zinc-400 text-sm bg-[#111] px-3 py-2 rounded-md border border-[#222]">
-                    <Gauge className="h-4 w-4 text-yellow-500/70" />
-                    <span>{car.mileage} km</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-400 text-sm bg-[#111] px-3 py-2 rounded-md border border-[#222]">
-                    <Settings2 className="h-4 w-4 text-yellow-500/70" />
-                    <span className="truncate">{car.transmission}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-400 text-sm bg-[#111] px-3 py-2 rounded-md border border-[#222]">
-                    <Fuel className="h-4 w-4 text-yellow-500/70" />
-                    <span>{car.fuel}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-400 text-sm bg-[#111] px-3 py-2 rounded-md border border-[#222]">
-                    <CalendarDays className="h-4 w-4 text-yellow-500/70" />
-                    <span>Modelo {car.year}</span>
-                  </div>
-                </div>
-
-                <button className="w-full bg-[#111] hover:bg-yellow-500 text-white hover:text-black font-semibold py-3 rounded-xl border border-[#333] hover:border-transparent transition-all">
-                  Ver Detalles
-                </button>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {vehiclesData.length === 0 ? (
+            <div className="col-span-full text-center py-20">
+              <p className="text-zinc-500 text-xl font-medium">No hay vehículos disponibles en este momento.</p>
             </div>
-          ))}
+          ) : (
+            vehiclesData.map((vehiculo, index) => (
+              <div key={vehiculo.id} className="group bg-[#0a0a0a] rounded-xl overflow-hidden border border-[#222] hover:border-yellow-500/50 transition-all duration-300 shadow-xl hover:shadow-yellow-500/10">
+                <div className="relative h-64 overflow-hidden bg-[#111]">
+                  <div className="absolute top-4 right-4 z-10">
+                    {index < 2 && (
+                      <span className="bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        Destacado
+                      </span>
+                    )}
+                  </div>
+                  <Image
+                    src={(vehiculo.fotos && vehiculo.fotos.length > 0) ? vehiculo.fotos[0] : defaultImages[index % defaultImages.length]}
+                    alt={`${vehiculo.marca} ${vehiculo.modelo}`}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                </div>
+                
+                <div className="p-6 relative">
+                  <div className="absolute -top-6 right-6 bg-[#0a0a0a] p-3 rounded-xl border border-[#222] shadow-lg">
+                    <Car className="h-6 w-6 text-yellow-500" />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-yellow-500 transition-colors">
+                      {vehiculo.marca} {vehiculo.modelo}
+                    </h3>
+                    <p className="text-zinc-400 font-medium">{vehiculo.dominio}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6 text-sm text-zinc-300">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-yellow-500/70" />
+                      <span>{vehiculo.anio}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Gauge className="h-4 w-4 text-yellow-500/70" />
+                      <span>{vehiculo.kilometros?.toLocaleString()} km</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Fuel className="h-4 w-4 text-yellow-500/70" />
+                      <span>Nafta</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Settings2 className="h-4 w-4 text-yellow-500/70" />
+                      <span>Automática</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#222] flex justify-between items-end">
+                    <div>
+                      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-1">Precio</p>
+                      <p className="text-2xl font-bold text-white">${vehiculo.precioVenta.toLocaleString()}</p>
+                    </div>
+                    <button className="bg-transparent hover:bg-yellow-500 hover:text-black text-yellow-500 border border-yellow-500 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300">
+                      Ver Detalles
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
       <PublicFooter />

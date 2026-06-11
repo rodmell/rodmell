@@ -9,6 +9,7 @@ import {
   Users,
   BadgeDollarSign,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ const sidebarLinks = [
   { name: "Vehículos", href: "/dashboard/vehicles", icon: Car },
   { name: "Clientes", href: "/dashboard/customers", icon: Users },
   { name: "Ventas", href: "/dashboard/sales", icon: BadgeDollarSign },
+  { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
   { name: "Configuración", href: "/dashboard/settings", icon: Settings },
 ];
 
