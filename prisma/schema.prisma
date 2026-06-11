@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SELLER
+  ADMIN_STAFF
+  WORKSHOP
+}
+
+enum EstadoVehiculo {
+  DISPONIBLE
+  RESERVADO
+  VENDIDO
+  ENTREGADO
+  CONSIGNADO
+}
+
+enum MedioPago {
+  SENA
+  TRANSFERENCIA
+  EFECTIVO
+  TARJETA
+  OTROS
+}
+
+enum EstadoCuota {
+  PENDIENTE
+  PAGADA
+  VENCIDA
+}
+
+enum ConceptoGasto {
+  PATENTE
+  INSCRIPCION
+  PRENDA
+  GESTORIA
+  ACCESORIOS
+  OTROS
+}
+
+enum TipoDocumento {
+  DNI
+  FORMULARIO
+  CONTRATO
+  PDF
+  OTRO
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String
+  username      String      @unique
+  password      String
+  role          Role        @default(SELLER)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  operaciones   Operacion[]
+}
+
+model Cliente {
+  id             String      @id @default(cuid())
+  nombreCompleto String
+  dni            String?
+  cuil           String?
+  estadoCivil    String?
+  conyuge        String?
+  direccion      String?
+  telefono       String?
+  email          String?
+  observaciones  String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  operaciones    Operacion[]
+  documentos     Documento[]
+}
+
+model Vehiculo {
+  id           String         @id @default(cuid())
+  marca        String
+  modelo       String
+  anio         Int
+  dominio      String
+  color        String?
+  kilometros   Int?
+  precioVenta  Float
+  estado       EstadoVehiculo @default(DISPONIBLE)
+  fotos        String[]       // Array of image URLs
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  operaciones  Operacion[]
+  documentos   Documento[]
+}
+
+model Operacion {
+  id                String    @id @default(cuid())
+  clienteId         String
+  vehiculoId        String
+  vendedorId        String
+  precioVehiculo    Float
+  formaPago         String?
+  credito           Float?
+  gastosInscripcion Float?
+  gastosPrenda      Float?
+  accesorios        Float?
+  quebranto         Float?
+  observaciones     String?
+  total             Float
+  saldoPendiente    Float
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  cliente           Cliente   @relation(fields: [clienteId], references: [id])
+  vehiculo          Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  vendedor          User      @relation(fields: [vendedorId], references: [id])
+
+  pagos             Pago[]
+  cuotas            Cuota[]
+  gastos            Gasto[]
+  documentos        Documento[]
+}
+
+model Pago {
+  id           String    @id @default(cuid())
+  operacionId  String
+  fecha        DateTime
+  importe      Float
+  medioPago    MedioPago
+  observaciones String?
+
+  operacion    Operacion @relation(fields: [operacionId], references: [id])
+}
+
+model Cuota {
+  id               String      @id @default(cuid())
+  operacionId      String
+  numeroCuota      Int
+  valor            Float
+  fechaVencimiento DateTime
+  estado           EstadoCuota @default(PENDIENTE)
+
+  operacion        Operacion   @relation(fields: [operacionId], references: [id])
+}
+
+model Gasto {
+  id           String        @id @default(cuid())
+  operacionId  String
+  concepto     ConceptoGasto
+  monto        Float
+  fecha        DateTime
+
+  operacion    Operacion     @relation(fields: [operacionId], references: [id])
+}
+
+model Documento {
+  id           String        @id @default(cuid())
+  operacionId  String?
+  clienteId    String?
+  vehiculoId   String?
+  tipo         TipoDocumento
+  url          String
+  nombreArchivo String
+
+  operacion    Operacion?    @relation(fields: [operacionId], references: [id])
+  cliente      Cliente?      @relation(fields: [clienteId], references: [id])
+  vehiculo     Vehiculo?     @relation(fields: [vehiculoId], references: [id])
+}
