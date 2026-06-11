@@ -5,14 +5,14 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const id = params.id;
+    const { id } = await params;
 
     // Delete sale
     const sale = await prisma.operacion.delete({
@@ -22,7 +22,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     await prisma.activityLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: "DELETE_SALE",
         details: `Eliminó venta de ${sale.vehiculo.marca} ${sale.vehiculo.modelo} a ${sale.cliente.nombreCompleto}`
       }
