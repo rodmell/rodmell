@@ -13,7 +13,6 @@ import {
 import { LogOut, User as UserIcon, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
-import { Button } from "@/components/ui/button";
 
 export function TopNav() {
   const { data: session } = useSession();
@@ -26,10 +25,8 @@ export function TopNav() {
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 shadow-sm backdrop-blur md:px-6">
       <div className="flex items-center gap-4 md:hidden">
         <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-slate-400">
-              <Menu className="h-6 w-6" />
-            </Button>
+          <SheetTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-slate-800 hover:text-slate-300 h-10 w-10 text-slate-400">
+            <Menu className="h-6 w-6" />
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0 bg-slate-900 border-r border-slate-800">
             <Sidebar />
