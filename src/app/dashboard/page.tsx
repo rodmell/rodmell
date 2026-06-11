@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { Car, Users, DollarSign, Activity, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { Car, Users, DollarSign, Activity, TrendingUp, Clock } from "lucide-react";
 import Image from "next/image";
 
 export default async function DashboardPage() {
