@@ -1,6 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Car, Fuel, Gauge, Settings2, CalendarDays } from "lucide-react";
+import { PublicHeader } from "@/components/public/PublicHeader";
+import { PublicFooter } from "@/components/public/PublicFooter";
 
 // Mock Data para el Catálogo
 const vehicles = [
@@ -75,23 +76,7 @@ const vehicles = [
 export default function CatalogoPage() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-yellow-500/30">
-      {/* Header Público */}
-      <header className="sticky top-0 z-50 w-full border-b border-[#222] bg-black/80 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <Link href="/">
-            <Image src="/logo.png" alt="Rodmell Logo" width={140} height={45} className="object-contain" priority />
-          </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <Link href="/" className="text-zinc-400 hover:text-white transition-colors">Inicio</Link>
-            <Link href="/catalogo" className="text-yellow-500">Catálogo</Link>
-            <Link href="/nosotros" className="text-zinc-400 hover:text-white transition-colors">Nosotros</Link>
-            <Link href="/contacto" className="text-zinc-400 hover:text-white transition-colors">Contacto</Link>
-          </nav>
-          <Link href="/login" className="text-sm font-medium bg-[#111] hover:bg-[#222] border border-[#333] px-4 py-2 rounded-md transition-all text-white">
-            Portal Admin
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-16 overflow-hidden">
@@ -202,14 +187,7 @@ export default function CatalogoPage() {
           ))}
         </div>
       </section>
-
-      {/* Footer Público */}
-      <footer className="border-t border-[#222] bg-black py-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <Image src="/logo.png" alt="Rodmell Logo" width={120} height={40} className="object-contain opacity-50 hover:opacity-100 transition-opacity" />
-          <p className="text-zinc-600 text-sm">© {new Date().getFullYear()} Rodmell Automotores. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

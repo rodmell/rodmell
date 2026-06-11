@@ -88,6 +88,7 @@ model Vehiculo {
   modelo       String
   anio         Int
   dominio      String
+  chasis       String?
   color        String?
   kilometros   Int?
   precioVenta  Float

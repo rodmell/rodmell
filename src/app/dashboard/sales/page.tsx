@@ -1,25 +1,24 @@
-import { BadgeDollarSign } from "lucide-react";
+import prisma from "@/lib/prisma";
+import SaleClient from "./SaleClient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export default function SalesPage() {
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
-            <BadgeDollarSign className="h-8 w-8 text-yellow-500" />
-            Ventas
-          </h1>
-          <p className="text-zinc-400 mt-1">Gestión de boletos y transacciones realizadas.</p>
-        </div>
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-md transition-colors">
-          Registrar Venta
-        </button>
-      </div>
+export default async function SalesPage() {
+  const session = await getServerSession(authOptions);
+  
+  const sales = await prisma.operacion.findMany({
+    include: { cliente: true, vehiculo: true },
+    orderBy: { createdAt: "desc" },
+  });
 
-      <div className="bg-[#0a0a0a] border border-[#222] rounded-lg p-8 text-center">
-        <h3 className="text-lg font-medium text-white mb-2">Sección en construcción</h3>
-        <p className="text-zinc-500">Próximamente podrás ver aquí tu historial de ventas.</p>
-      </div>
-    </div>
-  );
+  const vehicles = await prisma.vehiculo.findMany({
+    where: { estado: "DISPONIBLE" },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const customers = await prisma.cliente.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
+  return <SaleClient sales={sales} vehicles={vehicles} customers={customers} session={session} />;
 }

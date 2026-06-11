@@ -13,9 +13,11 @@ import {
 import { LogOut, User as UserIcon, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
+import { useRouter } from "next/navigation";
 
 export function TopNav() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   const userInitials = session?.user?.name
     ? session.user.name.substring(0, 2).toUpperCase()
@@ -55,7 +57,10 @@ export function TopNav() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[#222]" />
-            <DropdownMenuItem className="cursor-pointer hover:bg-[#111] hover:text-white focus:bg-[#111] focus:text-white">
+            <DropdownMenuItem 
+              className="cursor-pointer hover:bg-[#111] hover:text-white focus:bg-[#111] focus:text-white"
+              onClick={() => router.push("/dashboard/settings")}
+            >
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
             </DropdownMenuItem>

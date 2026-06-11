@@ -1,0 +1,160 @@
+"use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { BadgeDollarSign, Plus } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export default function SaleClient({ sales, vehicles, customers, session }: { sales: any[], vehicles: any[], customers: any[], session: any }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    clienteId: "",
+    vehiculoId: "",
+    precioVehiculo: "",
+    formaPago: "",
+    total: "",
+    saldoPendiente: "0",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          vendedorId: session?.user?.id || "cl123", // Replace with actual session user id
+        }),
+      });
+      if (res.ok) {
+        setOpen(false);
+        setFormData({ clienteId: "", vehiculoId: "", precioVehiculo: "", formaPago: "", total: "", saldoPendiente: "0" });
+        router.refresh();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+            <BadgeDollarSign className="h-8 w-8 text-yellow-500" />
+            Ventas
+          </h1>
+          <p className="text-zinc-400 mt-1">Registrá y gestioná las operaciones concretadas.</p>
+        </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+            <Plus className="w-4 h-4 mr-2" /> Nueva Operación
+          </DialogTrigger>
+          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white">
+            <DialogHeader>
+              <DialogTitle>Registrar Venta</DialogTitle>
+              <DialogDescription className="text-zinc-400">
+                Seleccioná el cliente, el vehículo y los detalles de pago.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <label className="text-sm font-medium text-zinc-300">Cliente</label>
+                  <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={formData.clienteId} onChange={e => setFormData({...formData, clienteId: e.target.value})}>
+                    <option value="">Seleccione un cliente...</option>
+                    {customers.map(c => <option key={c.id} value={c.id}>{c.nombreCompleto} (DNI: {c.dni})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <label className="text-sm font-medium text-zinc-300">Vehículo</label>
+                  <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={formData.vehiculoId} onChange={e => setFormData({...formData, vehiculoId: e.target.value})}>
+                    <option value="">Seleccione un vehículo disponible...</option>
+                    {vehicles.map(v => <option key={v.id} value={v.id}>{v.marca} {v.modelo} - {v.dominio} (${v.precioVenta})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Precio Acordado</label>
+                  <Input required type="number" className="bg-[#111] border-[#333]" value={formData.precioVehiculo} onChange={e => setFormData({...formData, precioVehiculo: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Forma de Pago</label>
+                  <Input required className="bg-[#111] border-[#333]" placeholder="Ej: Efectivo + Transferencia" value={formData.formaPago} onChange={e => setFormData({...formData, formaPago: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Total a Pagar</label>
+                  <Input required type="number" className="bg-[#111] border-[#333]" value={formData.total} onChange={e => setFormData({...formData, total: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Saldo Pendiente</label>
+                  <Input required type="number" className="bg-[#111] border-[#333]" value={formData.saldoPendiente} onChange={e => setFormData({...formData, saldoPendiente: e.target.value})} />
+                </div>
+              </div>
+              <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
+                {loading ? "Procesando..." : "Confirmar Venta"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-[#222] hover:bg-transparent">
+              <TableHead className="text-zinc-400">Fecha</TableHead>
+              <TableHead className="text-zinc-400">Cliente</TableHead>
+              <TableHead className="text-zinc-400">Vehículo</TableHead>
+              <TableHead className="text-zinc-400">Forma Pago</TableHead>
+              <TableHead className="text-zinc-400 text-right">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sales.length === 0 ? (
+              <TableRow className="border-[#222] hover:bg-transparent">
+                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
+                  No hay ventas registradas
+                </TableCell>
+              </TableRow>
+            ) : (
+              sales.map((s) => (
+                <TableRow key={s.id} className="border-[#222] hover:bg-[#111]">
+                  <TableCell className="text-zinc-300">{new Date(s.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>
+                  <TableCell className="text-zinc-300">{s.vehiculo?.marca} {s.vehiculo?.modelo}</TableCell>
+                  <TableCell className="text-zinc-300">{s.formaPago}</TableCell>
+                  <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
