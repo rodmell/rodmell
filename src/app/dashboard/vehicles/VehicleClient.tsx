@@ -42,6 +42,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
 
   const handleEdit = (v: any) => {
     setEditingId(v.id);
@@ -55,6 +56,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       kilometros: v.kilometros?.toString() || "",
       precioVenta: v.precioVenta.toString(),
     });
+    setExistingPhotos(v.fotos || []);
     setOpen(true);
   };
 
@@ -96,7 +98,10 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         }
       }
 
-      const payload = { ...formData, fotos: uploadedPhotos };
+      // If we are editing and no new files were added, we should keep the existing ones
+      const finalPhotos = uploadedPhotos.length > 0 ? [...existingPhotos, ...uploadedPhotos] : existingPhotos;
+
+      const payload = { ...formData, fotos: finalPhotos };
       const url = editingId ? `/api/vehicles/${editingId}` : "/api/vehicles";
       const method = editingId ? "PUT" : "POST";
 
@@ -108,6 +113,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       if (res.ok) {
         setOpen(false);
         setEditingId(null);
+        setExistingPhotos([]);
         setFormData({ marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "" });
         setFiles(null);
         router.refresh();
@@ -177,6 +183,18 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-medium text-zinc-300">Galería de Imágenes</label>
                   <Input type="file" multiple accept="image/*" className="bg-[#111] border-[#333] cursor-pointer text-zinc-400 file:bg-[#222] file:text-white file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-2" onChange={e => setFiles(e.target.files)} />
+                  {existingPhotos.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-zinc-500 mb-2">Fotos actuales:</p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {existingPhotos.map((photo, i) => (
+                          <div key={i} className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0 border border-[#333]">
+                            <img src={photo} alt="Vehículo" className="object-cover w-full h-full" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
