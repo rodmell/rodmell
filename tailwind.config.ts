@@ -43,6 +43,15 @@ const config: Config = {
           foreground: "var(--card-foreground)",
         },
       },
+      keyframes: {
+        'bg-pan': {
+          '0%': { backgroundPosition: '0% 0%' },
+          '100%': { backgroundPosition: '100% 0%' },
+        }
+      },
+      animation: {
+        'bg-pan': 'bg-pan 3s linear infinite',
+      }
     },
   },
   plugins: [],

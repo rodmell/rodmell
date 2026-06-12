@@ -101,6 +101,8 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
           if (uploadRes.ok) {
             const blob = await uploadRes.json();
             uploadedPhotos.push(blob.url);
+          } else {
+            alert(`Error al subir ${files[i].name}. Revisa Vercel Blob.`);
           }
         }
       }

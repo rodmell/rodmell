@@ -1,7 +1,7 @@
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Gem, Gauge } from "lucide-react";
+import { ArrowRight, ShieldCheck, Gem, Gauge, MessageCircle, Instagram, Flag } from "lucide-react";
 
 export default function Home() {
   return (
@@ -68,6 +68,26 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm">
                   Garantizamos que el rendimiento de su próximo vehículo sea exactamente igual que el día que salió de fábrica.
                 </p>
+              </div>
+            </div>
+            
+            {/* Redes y Contacto (Boxes) */}
+            <div className="mt-16 text-center">
+              <div className="inline-flex flex-col items-center justify-center p-8 bg-[#050505] border border-[#222] rounded-3xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(234,179,8,0.05)_50%,transparent_75%)] bg-[length:250%_250%,100%_100%] animate-[bg-pan_3s_linear_infinite]" />
+                <h3 className="text-xl font-bold mb-6 relative z-10 flex items-center gap-2 uppercase tracking-widest text-zinc-300">
+                  <Flag className="w-5 h-5 text-yellow-500" />
+                  Conectá en Boxes
+                  <Flag className="w-5 h-5 text-yellow-500" />
+                </h3>
+                <div className="flex items-center gap-6 relative z-10">
+                  <a href="https://wa.me/5493513843463" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-14 h-14 bg-[#25D366] text-black rounded-full hover:scale-110 hover:-rotate-12 transition-all duration-300 shadow-[0_0_15px_rgba(37,211,102,0.3)]">
+                    <MessageCircle className="w-7 h-7" />
+                  </a>
+                  <a href="https://www.instagram.com/rodmellautomotores?igsh=MWRteGdiazhndHVteA==" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white rounded-full hover:scale-110 hover:rotate-12 transition-all duration-300 shadow-[0_0_15px_rgba(220,39,67,0.3)]">
+                    <Instagram className="w-7 h-7" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
