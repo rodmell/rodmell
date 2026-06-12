@@ -38,16 +38,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-[#050505] text-white">
-      {/* Left Panel - Branding & Visuals */}
-      <div className="hidden lg:flex flex-col w-1/2 relative overflow-hidden border-r border-[#222]">
-        {/* Background Gradient & Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/20 via-[#050505] to-black z-0" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-yellow-600/10 via-transparent to-transparent z-0" />
+      {/* Left Panel - Branding & Visuals (Solid Black) */}
+      <div className="hidden lg:flex flex-col w-1/2 relative overflow-hidden border-r border-[#222] bg-black">
+        {/* Only subtle glow around logo if needed, but keeping it completely dark to blend logo */}
         
-        {/* Abstract shapes / glow */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-yellow-600/10 rounded-full blur-[100px]" />
-
         <div className="relative z-10 flex flex-col justify-between h-full p-16">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Rodmell Automotores" width={180} height={60} className="object-contain drop-shadow-[0_0_15px_rgba(234,179,8,0.2)]" priority />
@@ -73,8 +67,12 @@ export default function LoginPage() {
 
       {/* Right Panel - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/5 via-black to-black z-0 lg:hidden" />
+        {/* Glow moved to the form side */}
+        <div className="absolute inset-0 bg-gradient-to-bl from-yellow-900/10 via-[#050505] to-black z-0" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/10 via-black to-black z-0" />
         
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-[120px]" />
+
         <div className="w-full max-w-md space-y-8 relative z-10">
           <div className="text-center lg:text-left space-y-2">
             <div className="lg:hidden flex justify-center mb-8">

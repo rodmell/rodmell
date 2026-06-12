@@ -75,6 +75,9 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     try {
       const payload = {
         ...formData,
+        precioVehiculo: parseFloat(formData.precioVehiculo) || 0,
+        total: parseFloat(formData.total) || 0,
+        saldoPendiente: parseFloat(formData.saldoPendiente) || 0,
         vendedorId: session?.user?.id || "cl123", // Replace with actual session user id
       };
       

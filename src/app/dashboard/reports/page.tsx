@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import prisma from "@/lib/prisma";
 import ReportsClient from "./ReportsClient";
 
@@ -6,7 +8,9 @@ export default async function ReportsPage() {
     orderBy: { createdAt: "asc" },
     include: {
       pagos: true,
-      cuotas: true
+      cuotas: true,
+      cliente: true,
+      vehiculo: true
     }
   });
 

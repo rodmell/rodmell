@@ -101,7 +101,14 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       // If we are editing and no new files were added, we should keep the existing ones
       const finalPhotos = uploadedPhotos.length > 0 ? [...existingPhotos, ...uploadedPhotos] : existingPhotos;
 
-      const payload = { ...formData, fotos: finalPhotos };
+      const payload = { 
+        ...formData, 
+        anio: parseInt(formData.anio) || 0,
+        kilometros: formData.kilometros ? parseInt(formData.kilometros) : null,
+        precioVenta: parseFloat(formData.precioVenta) || 0,
+        fotos: finalPhotos 
+      };
+      
       const url = editingId ? `/api/vehicles/${editingId}` : "/api/vehicles";
       const method = editingId ? "PUT" : "POST";
 
