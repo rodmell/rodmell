@@ -29,6 +29,8 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [portadaUrl, setPortadaUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     marca: "",
@@ -39,6 +41,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     color: "",
     kilometros: "",
     precioVenta: "",
+    descripcion: "",
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,8 +58,12 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       color: v.color || "",
       kilometros: v.kilometros?.toString() || "",
       precioVenta: v.precioVenta.toString(),
+      descripcion: v.descripcion || "",
     });
     setExistingPhotos(v.fotos || []);
+    setPortadaUrl(v.fotos && v.fotos.length > 0 ? v.fotos[0] : null);
+    setPreviewUrls([]);
+    setFiles(null);
     setOpen(true);
   };
 
@@ -99,7 +106,28 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       }
 
       // If we are editing and no new files were added, we should keep the existing ones
-      const finalPhotos = uploadedPhotos.length > 0 ? [...existingPhotos, ...uploadedPhotos] : existingPhotos;
+      const finalPhotos = uploadedPhotos.length > 0 ? [...existingPhotos, ...uploadedPhotos] : [...existingPhotos];
+
+      // Reorder to put portada at the beginning
+      if (portadaUrl) {
+        if (existingPhotos.includes(portadaUrl)) {
+          const idx = finalPhotos.indexOf(portadaUrl);
+          if (idx > -1) {
+            finalPhotos.splice(idx, 1);
+            finalPhotos.unshift(portadaUrl);
+          }
+        } else if (previewUrls.includes(portadaUrl)) {
+          const previewIdx = previewUrls.indexOf(portadaUrl);
+          if (previewIdx > -1 && uploadedPhotos[previewIdx]) {
+            const url = uploadedPhotos[previewIdx];
+            const finalIdx = finalPhotos.indexOf(url);
+            if (finalIdx > -1) {
+              finalPhotos.splice(finalIdx, 1);
+              finalPhotos.unshift(url);
+            }
+          }
+        }
+      }
 
       const payload = { 
         ...formData, 
@@ -121,7 +149,9 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         setOpen(false);
         setEditingId(null);
         setExistingPhotos([]);
-        setFormData({ marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "" });
+        setPreviewUrls([]);
+        setPortadaUrl(null);
+        setFormData({ marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", descripcion: "" });
         setFiles(null);
         router.refresh();
       }
@@ -188,14 +218,43 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                   <Input className="bg-[#111] border-[#333]" value={formData.chasis} onChange={e => setFormData({...formData, chasis: e.target.value})} />
                 </div>
                 <div className="space-y-2 col-span-2">
+                  <label className="text-sm font-medium text-zinc-300">Descripción Pública</label>
+                  <textarea 
+                    className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white resize-none h-24 focus:outline-none focus:border-yellow-500 transition-colors" 
+                    value={formData.descripcion} 
+                    onChange={e => setFormData({...formData, descripcion: e.target.value})}
+                    placeholder="Descripción detallada para el catálogo..."
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
                   <label className="text-sm font-medium text-zinc-300">Galería de Imágenes</label>
-                  <Input type="file" multiple accept="image/*" className="bg-[#111] border-[#333] cursor-pointer text-zinc-400 file:bg-[#222] file:text-white file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-2" onChange={e => setFiles(e.target.files)} />
-                  {existingPhotos.length > 0 && (
+                  <Input type="file" multiple accept="image/*" className="bg-[#111] border-[#333] cursor-pointer text-zinc-400 file:bg-[#222] file:text-white file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-2" onChange={e => {
+                    setFiles(e.target.files);
+                    if (e.target.files) {
+                      const urls = Array.from(e.target.files).map(f => URL.createObjectURL(f));
+                      setPreviewUrls(urls);
+                      if (!portadaUrl && existingPhotos.length === 0 && urls.length > 0) {
+                        setPortadaUrl(urls[0]);
+                      }
+                    } else {
+                      setPreviewUrls([]);
+                    }
+                  }} />
+                  {(existingPhotos.length > 0 || previewUrls.length > 0) && (
                     <div className="mt-4">
-                      <p className="text-xs text-zinc-500 mb-2">Fotos actuales:</p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {existingPhotos.map((photo, i) => (
-                          <div key={i} className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0 border border-[#333]">
+                      <p className="text-xs text-zinc-500 mb-2">Hacé click en una imagen para establecerla como <span className="text-yellow-500 font-bold">Portada</span> del catálogo:</p>
+                      <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 -mx-2">
+                        {[...existingPhotos, ...previewUrls].map((photo, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => setPortadaUrl(photo)}
+                            className={`relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer transition-all duration-300 border-2 ${portadaUrl === photo ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)] scale-105' : 'border-[#333] hover:border-[#666]'}`}
+                          >
+                            {portadaUrl === photo && (
+                              <div className="absolute top-0 left-0 w-full bg-yellow-500 text-black text-[10px] font-bold text-center py-0.5 z-10">
+                                PORTADA
+                              </div>
+                            )}
                             <img src={photo} alt="Vehículo" className="object-cover w-full h-full" />
                           </div>
                         ))}

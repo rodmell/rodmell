@@ -93,6 +93,7 @@ model Vehiculo {
   color        String?
   kilometros   Int?
   precioVenta  Float
+  descripcion  String?
   estado       EstadoVehiculo @default(DISPONIBLE)
   fotos        String[]       // Array of image URLs
   createdAt    DateTime       @default(now())

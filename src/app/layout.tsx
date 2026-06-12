@@ -17,9 +17,6 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Rodmell Automotores",
   description: "Sistema de gestión SaaS para concesionaria",
-  icons: {
-    icon: "/favicon.png",
-  },
 };
 
 export default function RootLayout({

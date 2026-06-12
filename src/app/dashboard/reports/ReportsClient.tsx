@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BarChart3, TrendingUp, Users, Car, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { BarChart3, TrendingUp, Users, Car, CheckCircle2, Search } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -15,6 +16,7 @@ import {
 } from "recharts";
 
 export default function ReportsClient({ sales, vehicles, customers }: { sales: any[], vehicles: any[], customers: any[] }) {
+  const [historySearch, setHistorySearch] = useState("");
   
   // Calculate total revenue (pagos sueltos + cuotas pagadas)
   const calculateRecaudado = (sale: any) => {
@@ -118,13 +120,24 @@ export default function ReportsClient({ sales, vehicles, customers }: { sales: a
 
       {/* Historial de Movimientos Diarios */}
       <div className="bg-[#0a0a0a] border border-[#222] rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="p-2 bg-[#111] rounded-lg border border-[#333]">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-[#111] rounded-lg border border-[#333]">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Historial de Movimientos</h3>
+              <p className="text-zinc-400 text-sm">Registro detallado de ingresos (pagos iniciales y cuotas).</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-white">Historial de Movimientos</h3>
-            <p className="text-zinc-400 text-sm">Registro detallado de ingresos (pagos iniciales y cuotas).</p>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <input 
+              placeholder="Buscar por fecha, cliente, concepto..." 
+              className="w-full pl-10 pr-4 py-2 bg-[#111] border border-[#333] rounded-md text-sm text-white focus:outline-none focus:border-yellow-500 transition-colors"
+              value={historySearch}
+              onChange={(e) => setHistorySearch(e.target.value)}
+            />
           </div>
         </div>
         
@@ -161,13 +174,24 @@ export default function ReportsClient({ sales, vehicles, customers }: { sales: a
                   })) || [];
               
                   return [...pagos, ...cuotasPagadas];
-                }).sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+                }).sort((a, b) => b.fecha.getTime() - a.fecha.getTime())
+                .filter((mov) => {
+                  if (!historySearch.trim()) return true;
+                  const term = historySearch.toLowerCase();
+                  return (
+                    mov.fecha.toLocaleDateString().includes(term) ||
+                    mov.cliente.toLowerCase().includes(term) ||
+                    mov.tipo.toLowerCase().includes(term) ||
+                    mov.descripcion.toLowerCase().includes(term) ||
+                    mov.monto.toString().includes(term)
+                  );
+                });
 
                 if (allMovements.length === 0) {
                   return (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-zinc-500">
-                        No hay movimientos registrados
+                        {historySearch ? "No hay resultados para la búsqueda" : "No hay movimientos registrados"}
                       </td>
                     </tr>
                   );
