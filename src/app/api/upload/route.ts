@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
 export async function POST(req: Request) {
+  // Trigger rebuild for new Vercel Blob environment variables
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
