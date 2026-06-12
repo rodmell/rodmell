@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Car, Plus, Search, Edit, Trash2, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,7 +28,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [files, setFiles] = useState<FileList | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [portadaUrl, setPortadaUrl] = useState<string | null>(null);
 
@@ -63,7 +63,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     setExistingPhotos(v.fotos || []);
     setPortadaUrl(v.fotos && v.fotos.length > 0 ? v.fotos[0] : null);
     setPreviewUrls([]);
-    setFiles(null);
+    setFiles([]);
     setOpen(true);
   };
 
@@ -79,6 +79,24 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       }
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const removeExistingPhoto = (e: React.MouseEvent, urlToRemove: string) => {
+    e.stopPropagation();
+    setExistingPhotos(prev => prev.filter(url => url !== urlToRemove));
+    if (portadaUrl === urlToRemove) {
+      setPortadaUrl(null);
+    }
+  };
+
+  const removeNewPhoto = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    const urlToRemove = previewUrls[index];
+    setFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    if (portadaUrl === urlToRemove) {
+      setPortadaUrl(null);
     }
   };
 
@@ -154,7 +172,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         setPreviewUrls([]);
         setPortadaUrl(null);
         setFormData({ marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", descripcion: "" });
-        setFiles(null);
+        setFiles([]);
         router.refresh();
       }
     } catch (error) {
@@ -231,33 +249,52 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-medium text-zinc-300">Galería de Imágenes</label>
                   <Input type="file" multiple accept="image/*" className="bg-[#111] border-[#333] cursor-pointer text-zinc-400 file:bg-[#222] file:text-white file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-2" onChange={e => {
-                    setFiles(e.target.files);
                     if (e.target.files) {
-                      const urls = Array.from(e.target.files).map(f => URL.createObjectURL(f));
-                      setPreviewUrls(urls);
+                      const fileArray = Array.from(e.target.files);
+                      setFiles(prev => [...prev, ...fileArray]);
+                      const urls = fileArray.map(f => URL.createObjectURL(f));
+                      setPreviewUrls(prev => [...prev, ...urls]);
                       if (!portadaUrl && existingPhotos.length === 0 && urls.length > 0) {
                         setPortadaUrl(urls[0]);
                       }
-                    } else {
-                      setPreviewUrls([]);
                     }
                   }} />
                   {(existingPhotos.length > 0 || previewUrls.length > 0) && (
                     <div className="mt-4">
-                      <p className="text-xs text-zinc-500 mb-2">Hacé click en una imagen para establecerla como <span className="text-yellow-500 font-bold">Portada</span> del catálogo:</p>
+                      <p className="text-xs text-zinc-500 mb-2">Hacé click en una imagen para establecerla como <span className="text-yellow-500 font-bold">Portada</span> del catálogo o en la <span className="text-red-500 font-bold">X</span> para eliminarla:</p>
                       <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 -mx-2">
-                        {[...existingPhotos, ...previewUrls].map((photo, i) => (
+                        {existingPhotos.map((photo, i) => (
                           <div 
-                            key={i} 
+                            key={`ext-${i}`} 
                             onClick={() => setPortadaUrl(photo)}
                             className={`relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer transition-all duration-300 border-2 ${portadaUrl === photo ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)] scale-105' : 'border-[#333] hover:border-[#666]'}`}
                           >
+                            <button onClick={(e) => removeExistingPhoto(e, photo)} type="button" className="absolute top-1 right-1 bg-black/70 hover:bg-red-500 text-white rounded-full p-1 z-20 transition-colors">
+                              <X className="w-3 h-3" />
+                            </button>
                             {portadaUrl === photo && (
-                              <div className="absolute top-0 left-0 w-full bg-yellow-500 text-black text-[10px] font-bold text-center py-0.5 z-10">
+                              <div className="absolute bottom-0 left-0 w-full bg-yellow-500 text-black text-[10px] font-bold text-center py-0.5 z-10">
                                 PORTADA
                               </div>
                             )}
                             <img src={photo} alt="Vehículo" className="object-cover w-full h-full" />
+                          </div>
+                        ))}
+                        {previewUrls.map((photo, i) => (
+                          <div 
+                            key={`new-${i}`} 
+                            onClick={() => setPortadaUrl(photo)}
+                            className={`relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer transition-all duration-300 border-2 ${portadaUrl === photo ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)] scale-105' : 'border-[#333] hover:border-[#666]'}`}
+                          >
+                            <button onClick={(e) => removeNewPhoto(e, i)} type="button" className="absolute top-1 right-1 bg-black/70 hover:bg-red-500 text-white rounded-full p-1 z-20 transition-colors">
+                              <X className="w-3 h-3" />
+                            </button>
+                            {portadaUrl === photo && (
+                              <div className="absolute bottom-0 left-0 w-full bg-yellow-500 text-black text-[10px] font-bold text-center py-0.5 z-10">
+                                PORTADA
+                              </div>
+                            )}
+                            <img src={photo} alt="Nuevo Vehículo" className="object-cover w-full h-full" />
                           </div>
                         ))}
                       </div>
