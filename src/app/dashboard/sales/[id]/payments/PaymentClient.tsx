@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function PaymentClient({ sale, totalRecaudado }: { sale: any, totalRecaudado: number }) {
   const router = useRouter();
@@ -38,10 +39,13 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
       if (res.ok) {
         setOpenPago(false);
         setPagoData({ importe: "", medioPago: "EFECTIVO", observaciones: "" });
+        toast.success("Pago registrado correctamente");
         router.refresh();
+      } else {
+        toast.error("Error al registrar el pago");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      toast.error("Error de conexión");
     }
     setLoading(false);
   };
@@ -57,26 +61,34 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
       });
       if (res.ok) {
         setOpenCuotas(false);
+        toast.success("Plan de cuotas generado");
         router.refresh();
+      } else {
+        toast.error("Error al generar las cuotas");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      toast.error("Error de conexión");
     }
     setLoading(false);
   };
 
   const toggleCuotaStatus = async (cuotaId: string, currentStatus: string) => {
-    if (!confirm(`¿Marcar cuota como ${currentStatus === "PAGADA" ? "PENDIENTE" : "PAGADA"}?`)) return;
+    // We remove native confirm to make it seamless, user can just click again to revert
     try {
       const newStatus = currentStatus === "PAGADA" ? "PENDIENTE" : "PAGADA";
-      await fetch(`/api/installments/${cuotaId}`, {
+      const res = await fetch(`/api/installments/${cuotaId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: newStatus }),
       });
-      router.refresh();
-    } catch (error) {
-      console.error(error);
+      if (res.ok) {
+        toast.success(`Cuota marcada como ${newStatus}`);
+        router.refresh();
+      } else {
+        toast.error("No se pudo actualizar la cuota");
+      }
+    } catch {
+      toast.error("Error de conexión");
     }
   };
 
@@ -178,7 +190,7 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                         <DollarSign className="w-5 h-5 text-green-500" />
                       </div>
                       <div>
-                        <p className="text-white font-medium">{pago.medioPago}</p>
+                        <p className="text-white font-medium">{pago.medioPago === "SENA" ? "SEÑA" : pago.medioPago}</p>
                         <p className="text-zinc-500 text-xs">{new Date(pago.fecha).toLocaleDateString()} {pago.observaciones ? `• ${pago.observaciones}` : ""}</p>
                       </div>
                     </div>

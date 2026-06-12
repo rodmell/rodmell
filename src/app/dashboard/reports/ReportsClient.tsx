@@ -16,15 +16,21 @@ import {
 
 export default function ReportsClient({ sales, vehicles, customers }: { sales: any[], vehicles: any[], customers: any[] }) {
   
-  // Calculate total revenue
-  const totalRevenue = sales.reduce((acc, sale) => acc + sale.total, 0);
+  // Calculate total revenue (pagos sueltos + cuotas pagadas)
+  const calculateRecaudado = (sale: any) => {
+    const pagos = sale.pagos?.reduce((sum: number, p: any) => sum + p.importe, 0) || 0;
+    const cuotas = sale.cuotas?.filter((c: any) => c.estado === "PAGADA").reduce((sum: number, c: any) => sum + c.valor, 0) || 0;
+    return pagos + cuotas;
+  };
+
+  const totalRevenue = sales.reduce((acc, sale) => acc + calculateRecaudado(sale), 0);
   
-  // Group sales by month (Mock logic for this year)
+  // Group sales by month
   const monthlySales = Array.from({ length: 12 }, (_, i) => {
     const monthSales = sales.filter(s => new Date(s.createdAt).getMonth() === i);
     return {
       name: new Date(0, i).toLocaleString('es', { month: 'short' }).toUpperCase(),
-      total: monthSales.reduce((acc, s) => acc + s.total, 0),
+      total: monthSales.reduce((acc, s) => acc + calculateRecaudado(s), 0),
       operaciones: monthSales.length
     };
   });

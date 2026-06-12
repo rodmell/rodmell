@@ -3,7 +3,11 @@ import ReportsClient from "./ReportsClient";
 
 export default async function ReportsPage() {
   const sales = await prisma.operacion.findMany({
-    orderBy: { createdAt: "asc" }
+    orderBy: { createdAt: "asc" },
+    include: {
+      pagos: true,
+      cuotas: true
+    }
   });
 
   const vehicles = await prisma.vehiculo.findMany({
