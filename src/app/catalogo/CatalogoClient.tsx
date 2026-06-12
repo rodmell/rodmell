@@ -9,6 +9,9 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mainImage, setMainImage] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("AUTO");
+
+  const filteredVehicles = vehiclesData.filter(v => (v.tipo || "AUTO") === activeTab);
 
   const defaultImages = [
     "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80",
@@ -67,21 +70,37 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
       </section>
 
       <section className="py-16 container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Car className="h-6 w-6 text-yellow-500" />
-            Stock Disponible
-          </h2>
-          <span className="text-zinc-400 text-sm font-medium">{vehiclesData.length} vehículos encontrados</span>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Car className="h-6 w-6 text-yellow-500" />
+              Stock Disponible
+            </h2>
+            <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
+              <button 
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'AUTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+                onClick={() => setActiveTab('AUTO')}
+              >
+                Autos
+              </button>
+              <button 
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'MOTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+                onClick={() => setActiveTab('MOTO')}
+              >
+                Motos
+              </button>
+            </div>
+          </div>
+          <span className="text-zinc-400 text-sm font-medium">{filteredVehicles.length} vehículos encontrados</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {vehiclesData.length === 0 ? (
+          {filteredVehicles.length === 0 ? (
             <div className="col-span-full text-center py-20">
-              <p className="text-zinc-500 text-xl font-medium">No hay vehículos disponibles en este momento.</p>
+              <p className="text-zinc-500 text-xl font-medium">No hay vehículos disponibles en esta categoría.</p>
             </div>
           ) : (
-            vehiclesData.map((vehiculo, index) => (
+            filteredVehicles.map((vehiculo: any, index: number) => (
               <div key={vehiculo.id} className="group bg-[#0a0a0a] rounded-xl overflow-hidden border border-[#222] hover:border-yellow-500/50 transition-all duration-300 shadow-xl hover:shadow-yellow-500/10">
                 <div className="relative h-64 overflow-hidden bg-[#111]">
                   <div className="absolute top-4 right-4 z-10">

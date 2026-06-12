@@ -28,11 +28,13 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("AUTO");
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [portadaUrl, setPortadaUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
+    tipo: "AUTO",
     marca: "",
     modelo: "",
     anio: "",
@@ -41,6 +43,10 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     color: "",
     kilometros: "",
     precioVenta: "",
+    precioCosto: "",
+    precioFactura: "",
+    precioUSD: "",
+    condicion: "",
     descripcion: "",
   });
 
@@ -50,6 +56,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const handleEdit = (v: any) => {
     setEditingId(v.id);
     setFormData({
+      tipo: v.tipo || "AUTO",
       marca: v.marca,
       modelo: v.modelo,
       anio: v.anio.toString(),
@@ -58,6 +65,10 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       color: v.color || "",
       kilometros: v.kilometros?.toString() || "",
       precioVenta: v.precioVenta.toString(),
+      precioCosto: v.precioCosto?.toString() || "",
+      precioFactura: v.precioFactura?.toString() || "",
+      precioUSD: v.precioUSD?.toString() || "",
+      condicion: v.condicion || "",
       descripcion: v.descripcion || "",
     });
     setExistingPhotos(v.fotos || []);
@@ -154,6 +165,9 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         anio: parseInt(formData.anio) || 0,
         kilometros: formData.kilometros ? parseInt(formData.kilometros) : null,
         precioVenta: parseFloat(formData.precioVenta) || 0,
+        precioCosto: formData.precioCosto ? parseFloat(formData.precioCosto) : null,
+        precioFactura: formData.precioFactura ? parseFloat(formData.precioFactura) : null,
+        precioUSD: formData.precioUSD ? parseFloat(formData.precioUSD) : null,
         fotos: finalPhotos 
       };
       
@@ -171,7 +185,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         setExistingPhotos([]);
         setPreviewUrls([]);
         setPortadaUrl(null);
-        setFormData({ marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", descripcion: "" });
+        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "", descripcion: "" });
         setFiles([]);
         router.refresh();
       }
@@ -205,6 +219,21 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <label className="text-sm font-medium text-zinc-300">Tipo de Vehículo</label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] rounded-md h-10 px-3 text-sm text-white focus:outline-none focus:border-yellow-500"
+                    value={formData.tipo}
+                    onChange={e => setFormData({...formData, tipo: e.target.value})}
+                  >
+                    <option value="AUTO">Automóvil / Camioneta</option>
+                    <option value="MOTO">Motocicleta</option>
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <label className="text-sm font-medium text-zinc-300">Condición</label>
+                  <Input className="bg-[#111] border-[#333]" placeholder="ej: por ingresar" value={formData.condicion} onChange={e => setFormData({...formData, condicion: e.target.value})} />
+                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-zinc-300">Marca</label>
                   <Input required className="bg-[#111] border-[#333]" value={formData.marca} onChange={e => setFormData({...formData, marca: e.target.value})} />
@@ -228,6 +257,18 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-zinc-300">Precio de Venta</label>
                   <Input required type="number" className="bg-[#111] border-[#333]" value={formData.precioVenta} onChange={e => setFormData({...formData, precioVenta: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">$ Cdo. Info (Costo)</label>
+                  <Input type="number" className="bg-[#111] border-[#333]" value={formData.precioCosto} onChange={e => setFormData({...formData, precioCosto: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">$ Factura</label>
+                  <Input type="number" className="bg-[#111] border-[#333]" value={formData.precioFactura} onChange={e => setFormData({...formData, precioFactura: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Valor USD</label>
+                  <Input type="number" className="bg-[#111] border-[#333]" value={formData.precioUSD} onChange={e => setFormData({...formData, precioUSD: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-zinc-300">Color</label>
@@ -310,14 +351,31 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         </Dialog>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-        <Input 
-          placeholder="Buscar por marca, modelo o patente..." 
-          className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
+          <button 
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'AUTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+            onClick={() => setActiveTab('AUTO')}
+          >
+            Autos
+          </button>
+          <button 
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'MOTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+            onClick={() => setActiveTab('MOTO')}
+          >
+            Motos
+          </button>
+        </div>
+
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <Input 
+            placeholder="Buscar por marca, modelo o patente..." 
+            className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
@@ -325,36 +383,40 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
           <TableHeader>
             <TableRow className="border-[#222] hover:bg-transparent">
               <TableHead className="text-zinc-400">Marca / Modelo</TableHead>
-              <TableHead className="text-zinc-400">Año</TableHead>
+              <TableHead className="text-zinc-400">Año / KM</TableHead>
               <TableHead className="text-zinc-400">Patente</TableHead>
-              <TableHead className="text-zinc-400 text-right">Precio</TableHead>
-              <TableHead className="text-zinc-400 text-right">Estado</TableHead>
+              <TableHead className="text-zinc-400 text-right">$ Cdo. Info</TableHead>
+              <TableHead className="text-zinc-400 text-right">$ Factura</TableHead>
+              <TableHead className="text-zinc-400 text-right">USD</TableHead>
+              <TableHead className="text-zinc-400 text-right">Total Venta</TableHead>
+              <TableHead className="text-zinc-400">Condición</TableHead>
               <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {vehicles.filter(v => 
+              (v.tipo || "AUTO") === activeTab &&
               `${v.marca} ${v.modelo} ${v.dominio}`.toLowerCase().includes(searchTerm.toLowerCase())
             ).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">
-                  No hay vehículos registrados
+                <TableCell colSpan={9} className="text-center py-8 text-zinc-500">
+                  No hay vehículos registrados en esta categoría
                 </TableCell>
               </TableRow>
             ) : (
               vehicles.filter(v => 
+                (v.tipo || "AUTO") === activeTab &&
                 `${v.marca} ${v.modelo} ${v.dominio}`.toLowerCase().includes(searchTerm.toLowerCase())
               ).map((v) => (
                 <TableRow key={v.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="font-medium text-white">{v.marca} {v.modelo}</TableCell>
-                  <TableCell className="text-zinc-300">{v.anio}</TableCell>
+                  <TableCell className="text-zinc-300">{v.anio} <br/><span className="text-xs text-zinc-500">{v.kilometros} km</span></TableCell>
                   <TableCell className="text-zinc-300 uppercase">{v.dominio}</TableCell>
+                  <TableCell className="text-right text-zinc-300">{v.precioCosto ? `$${v.precioCosto.toLocaleString()}` : '-'}</TableCell>
+                  <TableCell className="text-right text-zinc-300">{v.precioFactura ? `$${v.precioFactura.toLocaleString()}` : '-'}</TableCell>
+                  <TableCell className="text-right text-green-500 font-medium">{v.precioUSD ? `US$ ${v.precioUSD.toLocaleString()}` : '-'}</TableCell>
                   <TableCell className="text-right text-yellow-500 font-bold">${v.precioVenta.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">
-                    <span className="bg-[#111] border border-[#333] px-2 py-1 rounded text-xs text-zinc-300">
-                      {v.estado}
-                    </span>
-                  </TableCell>
+                  <TableCell className="text-zinc-400 text-sm">{v.condicion || '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => handleEdit(v)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors">

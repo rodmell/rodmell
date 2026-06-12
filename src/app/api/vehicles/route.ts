@@ -27,6 +27,11 @@ export async function POST(req: Request) {
         precioVenta: parseFloat(body.precioVenta),
         estado: body.estado || "DISPONIBLE",
         descripcion: body.descripcion || null,
+        tipo: body.tipo || "AUTO",
+        precioCosto: body.precioCosto ? parseFloat(body.precioCosto) : null,
+        precioFactura: body.precioFactura ? parseFloat(body.precioFactura) : null,
+        precioUSD: body.precioUSD ? parseFloat(body.precioUSD) : null,
+        condicion: body.condicion || null,
         fotos: body.fotos || [],
       },
     });
