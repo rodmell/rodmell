@@ -51,16 +51,8 @@ export const generateReceiptPDF = async (sale: any) => {
     doc.setGState(new (doc as any).GState({ opacity: 1 }));
   }
 
-  // --- SELLO "PAGADO" DIAGONAL ---
-  doc.setGState(new (doc as any).GState({ opacity: 0.10 }));
-  doc.setFontSize(100);
-  doc.setTextColor("#ef4444"); // Rojo
-  doc.setFont("helvetica", "bolditalic");
-  doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
-
   // --- ENCABEZADO ---
-  doc.setFillColor(15, 15, 15);
+  doc.setFillColor(0, 0, 0); // Black background to match logo
   doc.rect(0, 0, pageWidth, 35, "F");
 
   if (logo.data) {
@@ -74,7 +66,10 @@ export const generateReceiptPDF = async (sale: any) => {
     writeText("Concesionaria Oficial", 15, 22, 10, "helvetica", "normal", "#ffffff");
   }
   
-  writeText("Av. Libertador 1234, CABA", pageWidth - 15, 12, 9, "helvetica", "normal", "#ffffff");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#ffffff");
+  doc.text("Av. Libertador 1234, CABA", pageWidth - 15, 12, { align: "right" });
   doc.text("Tel: +54 9 11 1234-5678", pageWidth - 15, 17, { align: "right" });
   doc.text("contacto@rodmell.com.ar", pageWidth - 15, 22, { align: "right" });
   doc.text("CUIT: 30-12345678-9", pageWidth - 15, 27, { align: "right" });
@@ -222,6 +217,14 @@ export const generateReceiptPDF = async (sale: any) => {
   const legalText = "Este comprobante acredita la recepción del pago detallado en el presente documento y constituye constancia válida de la operación registrada por la concesionaria. El documento pierde validez en caso de alteraciones o enmiendas.";
   const splitText = doc.splitTextToSize(legalText, pageWidth - 30);
   doc.text(splitText, 15, pageHeight - 15);
+
+  // --- SELLO "PAGADO" DIAGONAL (Dibujado al final para que quede por encima) ---
+  doc.setGState(new (doc as any).GState({ opacity: 0.10 }));
+  doc.setFontSize(100);
+  doc.setTextColor("#ef4444"); // Rojo
+  doc.setFont("helvetica", "bolditalic");
+  doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // Descargar PDF
   doc.save(`Comprobante_${sale.id}.pdf`);
