@@ -315,48 +315,80 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
           </div>
           
           <div className="p-0 flex-1">
-            {sale.pagos.filter((p: any) => 
-              `${p.comprobante || p.id.slice(-6).toUpperCase()} ${p.medioPago} ${p.observaciones || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
-            ).length === 0 ? (
-              <div className="p-8 text-center text-zinc-500">No hay pagos iniciales registrados.</div>
-            ) : (
-              <div className="divide-y divide-[#222]">
-                {sale.pagos.filter((p: any) => 
-                  `${p.comprobante || p.id.slice(-6).toUpperCase()} ${p.medioPago} ${p.observaciones || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
-                ).map((pago: any) => (
-                  <div key={pago.id} className="p-4 flex items-center justify-between hover:bg-[#111] transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
-                        <DollarSign className="w-5 h-5 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">{pago.medioPago === "SENA" ? "SEÑA" : pago.medioPago}</p>
-                        <p className="text-zinc-500 text-xs">{new Date(pago.fecha).toLocaleDateString()} {pago.observaciones ? `• ${pago.observaciones}` : ""}</p>
-                        <div className="flex gap-2 mt-1">
-                          {pago.comprobanteUrl && (
-                            <a href={pago.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">Ver adjunto</a>
-                          )}
-                          <span className="text-xs text-yellow-500 font-mono">Nº {pago.comprobante || pago.id.slice(-6).toUpperCase()}</span>
+            {(() => {
+              const iniciales = [];
+              if (sale.efectivo > 0) {
+                iniciales.push({
+                  id: `efectivo-${sale.id}`,
+                  isInitial: true,
+                  medioPago: "EFECTIVO (Venta)",
+                  fecha: sale.createdAt,
+                  observaciones: "Pago Inicial",
+                  importe: sale.efectivo,
+                  comprobante: sale.comprobante || sale.id
+                });
+              }
+              if (sale.autoPartePago > 0) {
+                iniciales.push({
+                  id: `autopago-${sale.id}`,
+                  isInitial: true,
+                  medioPago: "AUTO PARTE PAGO",
+                  fecha: sale.createdAt,
+                  observaciones: sale.detalleAutoPartePago || "Entrega de vehículo",
+                  importe: sale.autoPartePago,
+                  comprobante: sale.comprobante || sale.id
+                });
+              }
+              
+              const allPagos = [...iniciales, ...sale.pagos].filter((p: any) => 
+                `${p.comprobante || p.id.slice(-6).toUpperCase()} ${p.medioPago} ${p.observaciones || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
+              );
+
+              if (allPagos.length === 0) {
+                return <div className="p-8 text-center text-zinc-500">No hay pagos iniciales registrados.</div>;
+              }
+
+              return (
+                <div className="divide-y divide-[#222]">
+                  {allPagos.map((pago: any) => (
+                    <div key={pago.id} className="p-4 flex items-center justify-between hover:bg-[#111] transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                          <DollarSign className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{pago.medioPago === "SENA" ? "SEÑA" : pago.medioPago}</p>
+                          <p className="text-zinc-500 text-xs">{new Date(pago.fecha).toLocaleDateString()} {pago.observaciones ? `• ${pago.observaciones}` : ""}</p>
+                          <div className="flex gap-2 mt-1">
+                            {pago.comprobanteUrl && (
+                              <a href={pago.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">Ver adjunto</a>
+                            )}
+                            <span className="text-xs text-yellow-500 font-mono">Nº {pago.comprobante || pago.id.slice(-6).toUpperCase()}</span>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-white font-bold">${pago.importe.toLocaleString()}</span>
+                        {!pago.isInitial && (
+                          <>
+                            <button onClick={() => {
+                              setSelectedPago(pago);
+                              setEditPagoData({ medioPago: pago.medioPago, observaciones: pago.observaciones || "", file: null });
+                              setOpenEditPago(true);
+                            }} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar Pago">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDownloadPagoReceipt(pago)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
+                              <FileText className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-white font-bold">${pago.importe.toLocaleString()}</span>
-                      <button onClick={() => {
-                        setSelectedPago(pago);
-                        setEditPagoData({ medioPago: pago.medioPago, observaciones: pago.observaciones || "", file: null });
-                        setOpenEditPago(true);
-                      }} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar Pago">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDownloadPagoReceipt(pago)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
-                        <FileText className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

@@ -45,14 +45,27 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
 
   const idValue = item ? item.comprobante || item.id : sale.comprobante || sale.id;
 
-  const drawDecorations = (pageNumber: number, totalPages: number) => {
-    // --- MARCA DE AGUA INSTITUCIONAL ---
+  const drawWatermark = () => {
     if (favicon.data) {
       doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
       const watermarkSize = 180;
       doc.addImage(favicon.data, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
       doc.setGState(new (doc as any).GState({ opacity: 1 }));
     }
+  };
+
+  // Override addPage to draw watermark behind content
+  const originalAddPage = doc.addPage.bind(doc);
+  doc.addPage = function(...args: any[]) {
+    originalAddPage(...args);
+    drawWatermark();
+    return this;
+  };
+
+  // Draw watermark for the first page
+  drawWatermark();
+
+  const drawDecorations = (pageNumber: number, totalPages: number) => {
 
     // --- ENCABEZADO ---
     doc.setFillColor(0, 0, 0); // Black background to match logo
