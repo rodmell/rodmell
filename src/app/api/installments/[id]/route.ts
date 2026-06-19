@@ -44,6 +44,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           saldoPendiente: { decrement: cuota.valor }
         }
       });
+    } else if (estado === "PENDIENTE" && existingBefore?.estado === "PAGADA") {
+      await prisma.operacion.update({
+        where: { id: cuota.operacionId },
+        data: {
+          saldoPendiente: { increment: cuota.valor }
+        }
+      });
     }
 
     return NextResponse.json(cuota);

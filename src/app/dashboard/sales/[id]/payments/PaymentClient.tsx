@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText, Edit, Search } from "lucide-react";
+import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText, Edit, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,6 +49,10 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
         if (uploadRes.ok) {
           const blob = await uploadRes.json();
           comprobanteUrl = blob.url;
+        } else {
+          toast.error("Error al subir el adjunto");
+          setLoading(false);
+          return;
         }
       }
 
@@ -111,6 +115,10 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
         if (uploadRes.ok) {
           const blob = await uploadRes.json();
           comprobanteUrl = blob.url;
+        } else {
+          toast.error("Error al subir el adjunto");
+          setLoading(false);
+          return;
         }
       }
 
@@ -186,6 +194,10 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
         if (uploadRes.ok) {
           const blob = await uploadRes.json();
           comprobanteUrl = blob.url;
+        } else {
+          toast.error("Error al subir el adjunto");
+          setLoading(false);
+          return;
         }
       }
 
@@ -206,6 +218,23 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
         router.refresh();
       } else {
         toast.error("Error al actualizar pago");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
+  const handleDeletePago = async (pagoId: string) => {
+    if (!confirm("¿Estás seguro de eliminar este pago? El saldo pendiente se incrementará automáticamente.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/payments/${pagoId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Pago eliminado correctamente");
+        router.refresh();
+      } else {
+        toast.error("Error al eliminar el pago");
       }
     } catch {
       toast.error("Error de conexión");
@@ -380,6 +409,9 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                             </button>
                             <button onClick={() => handleDownloadPagoReceipt(pago)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
                               <FileText className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeletePago(pago.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar Pago">
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </>
                         )}
