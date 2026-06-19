@@ -26,6 +26,52 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
+function SearchableSelect({ options, value, onChange, placeholder }: any) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const selected = options.find((o: any) => o.value === value);
+    if (selected) setSearch(selected.label);
+    else setSearch("");
+  }, [value, options]);
+
+  return (
+    <div className="relative">
+      <Input 
+        className="w-full bg-[#111] border-[#333]" 
+        placeholder={placeholder} 
+        value={search} 
+        onChange={e => { setSearch(e.target.value); setOpen(true); onChange(""); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+      />
+      {open && (
+        <ul className="absolute z-50 w-full mt-1 max-h-60 overflow-auto bg-[#1a1a1a] border border-[#333] rounded-sm shadow-xl">
+          {options.filter((o:any) => o.label.toLowerCase().includes(search.toLowerCase())).map((o:any) => (
+            <li 
+              key={o.value} 
+              className="px-3 py-2 text-sm text-zinc-300 hover:bg-[#333] hover:text-white cursor-pointer"
+              onMouseDown={(e) => {
+                // use onMouseDown to fire before onBlur
+                e.preventDefault(); 
+                onChange(o.value);
+                setSearch(o.label);
+                setOpen(false);
+              }}
+            >
+              {o.label}
+            </li>
+          ))}
+          {options.filter((o:any) => o.label.toLowerCase().includes(search.toLowerCase())).length === 0 && (
+            <li className="px-3 py-2 text-sm text-zinc-500">No hay resultados</li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function SaleClient({ sales, vehicles, customers, session }: { sales: any[], vehicles: any[], customers: any[], session: any }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -207,10 +253,10 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+          <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Nueva Operación
           </DialogTrigger>
-          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white max-w-4xl max-h-[90vh] overflow-y-auto rounded-none">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Venta" : "Registrar Venta"}</DialogTitle>
               <DialogDescription className="text-zinc-400">
@@ -223,17 +269,28 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-sm font-medium text-zinc-300">Cliente</label>
-                  <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={formData.clienteId} onChange={e => setFormData({...formData, clienteId: e.target.value})}>
-                    <option value="">Seleccione un cliente...</option>
-                    {customers.map(c => <option key={c.id} value={c.id}>{c.nombreCompleto} (DNI: {c.dni})</option>)}
-                  </select>
+                  <SearchableSelect 
+                    placeholder="Escribí para buscar..."
+                    value={formData.clienteId}
+                    onChange={(val: string) => setFormData({...formData, clienteId: val})}
+                    options={customers.map(c => ({ value: c.id, label: `${c.nombreCompleto} (DNI: ${c.dni || "-"})` }))}
+                  />
                 </div>
                 <div className="space-y-2 col-span-2 md:col-span-1">
                   <label className="text-sm font-medium text-zinc-300">Vehículo</label>
-                  <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={formData.vehiculoId} onChange={e => setFormData({...formData, vehiculoId: e.target.value})}>
-                    <option value="">Seleccione un vehículo...</option>
-                    {vehicles.map(v => <option key={v.id} value={v.id}>{v.marca} {v.modelo} - {v.dominio} (${v.precioVenta})</option>)}
-                  </select>
+                  <SearchableSelect 
+                    placeholder="Escribí para buscar..."
+                    value={formData.vehiculoId}
+                    onChange={(val: string) => {
+                      setFormData({...formData, vehiculoId: val});
+                      // Optional: auto-fill price when selected
+                      const v = vehicles.find(v => v.id === val);
+                      if (v && v.precioVenta) {
+                        setFormData(prev => ({...prev, vehiculoId: val, precioVehiculo: v.precioVenta.toString()}));
+                      }
+                    }}
+                    options={vehicles.map(v => ({ value: v.id, label: `${v.marca} ${v.modelo} - ${v.dominio} ($${v.precioVenta})` }))}
+                  />
                 </div>
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-medium text-zinc-300">Precio del Vehículo Acordado</label>
