@@ -18,11 +18,12 @@ import {
 export default function ReportsClient({ sales, vehicles, customers }: { sales: any[], vehicles: any[], customers: any[] }) {
   const [historySearch, setHistorySearch] = useState("");
   
-  // Calculate total revenue (pagos sueltos + cuotas pagadas)
   const calculateRecaudado = (sale: any) => {
+    const efectivo = sale.efectivo || 0;
+    const autoPartePago = sale.autoPartePago || 0;
     const pagos = sale.pagos?.reduce((sum: number, p: any) => sum + p.importe, 0) || 0;
     const cuotas = sale.cuotas?.filter((c: any) => c.estado === "PAGADA").reduce((sum: number, c: any) => sum + c.valor, 0) || 0;
-    return pagos + cuotas;
+    return efectivo + autoPartePago + pagos + cuotas;
   };
 
   const totalRevenue = sales.reduce((acc, sale) => acc + calculateRecaudado(sale), 0);
@@ -155,10 +156,34 @@ export default function ReportsClient({ sales, vehicles, customers }: { sales: a
             <tbody className="divide-y divide-[#222]">
               {(() => {
                 const allMovements = sales.flatMap(sale => {
+                  const movs = [];
+
+                  if (sale.efectivo && sale.efectivo > 0) {
+                    movs.push({
+                      id: `efectivo-${sale.id}`,
+                      fecha: new Date(sale.createdAt),
+                      tipo: "Efectivo (Pago Inicial)",
+                      monto: sale.efectivo,
+                      descripcion: `${sale.vehiculo?.marca || ''} ${sale.vehiculo?.modelo || ''}`,
+                      cliente: sale.cliente?.nombreCompleto || 'Cliente Eliminado'
+                    });
+                  }
+
+                  if (sale.autoPartePago && sale.autoPartePago > 0) {
+                    movs.push({
+                      id: `autopago-${sale.id}`,
+                      fecha: new Date(sale.createdAt),
+                      tipo: "Auto en Parte de Pago",
+                      monto: sale.autoPartePago,
+                      descripcion: sale.detalleAutoPartePago || "Entrega de vehículo",
+                      cliente: sale.cliente?.nombreCompleto || 'Cliente Eliminado'
+                    });
+                  }
+
                   const pagos = sale.pagos?.map((p: any) => ({
                     id: `pago-${p.id}`,
                     fecha: new Date(p.fecha),
-                    tipo: p.medioPago === "SENA" ? "SEÑA" : "Pago Inicial",
+                    tipo: p.medioPago === "SENA" ? "SEÑA" : "Abono",
                     monto: p.importe,
                     descripcion: `${sale.vehiculo?.marca || ''} ${sale.vehiculo?.modelo || ''}`,
                     cliente: sale.cliente?.nombreCompleto || 'Cliente Eliminado'
@@ -173,7 +198,7 @@ export default function ReportsClient({ sales, vehicles, customers }: { sales: a
                     cliente: sale.cliente?.nombreCompleto || 'Cliente Eliminado'
                   })) || [];
               
-                  return [...pagos, ...cuotasPagadas];
+                  return [...movs, ...pagos, ...cuotasPagadas];
                 }).sort((a, b) => b.fecha.getTime() - a.fecha.getTime())
                 .filter((mov) => {
                   if (!historySearch.trim()) return true;

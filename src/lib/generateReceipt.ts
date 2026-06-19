@@ -43,63 +43,74 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
   const logo = await loadImage("/logo.png");
   const favicon = await loadImage("/favicon.png");
 
-  // --- MARCA DE AGUA INSTITUCIONAL ---
-  if (favicon.data) {
-    doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-    const watermarkSize = 180; // Hecho más grande
-    doc.addImage(favicon.data, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
-    doc.setGState(new (doc as any).GState({ opacity: 1 }));
-  }
-
-  // --- ENCABEZADO ---
-  doc.setFillColor(0, 0, 0); // Black background to match logo
-  doc.rect(0, 0, pageWidth, 35, "F");
-
-  if (logo.data) {
-    // Top left logo, preserving aspect ratio
-    const maxH = 25;
-    const ratio = logo.w / logo.h;
-    const w = maxH * ratio;
-    doc.addImage(logo.data, "PNG", 15, 5, w, maxH);
-  } else {
-    writeText("RODMELL AUTOS", 15, 15, 20, "helvetica", "bold", "#eab308");
-    writeText("Concesionaria Oficial", 15, 22, 10, "helvetica", "normal", "#ffffff");
-  }
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor("#ffffff");
-  doc.text("Av. Libertador 1234, CABA", pageWidth - 15, 12, { align: "right" });
-  doc.text("Tel: +54 9 11 1234-5678", pageWidth - 15, 17, { align: "right" });
-  doc.text("contacto@rodmell.com.ar", pageWidth - 15, 22, { align: "right" });
-  doc.text("CUIT: 30-12345678-9", pageWidth - 15, 27, { align: "right" });
-
-  let y = 45;
-
-  // --- TÍTULO Y NÚMERO DE COMPROBANTE ---
-  const titulos = {
-    VENTA: "COMPROBANTE DE OPERACIÓN",
-    PAGO: "COMPROBANTE DE PAGO",
-    CUOTA: "COMPROBANTE DE CUOTA"
-  };
-  
-  writeText(titulos[type], 15, y, 16, "helvetica", "bold", "#111111");
-  
   const idValue = item ? item.comprobante || item.id : sale.comprobante || sale.id;
-  const compNumber = `Nº: ${idValue.length > 8 ? idValue.slice(-6).toUpperCase() : idValue}`;
-  doc.setFontSize(12);
-  doc.setTextColor("#555555");
-  doc.text(compNumber, pageWidth - 15, y, { align: "right" });
-  y += 6;
-  doc.setFontSize(10);
-  const fechaStr = item ? new Date(item.fecha || item.fechaPago || item.createdAt || new Date()).toLocaleString() : new Date(sale.createdAt || new Date()).toLocaleString();
-  doc.text(`Fecha: ${fechaStr}`, pageWidth - 15, y, { align: "right" });
-  y += 10;
 
-  // Línea divisoria
-  doc.setDrawColor(200, 200, 200);
-  doc.line(15, y, pageWidth - 15, y);
-  y += 8;
+  const drawDecorations = (pageNumber: number, totalPages: number) => {
+    // --- MARCA DE AGUA INSTITUCIONAL ---
+    if (favicon.data) {
+      doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
+      const watermarkSize = 180;
+      doc.addImage(favicon.data, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
+      doc.setGState(new (doc as any).GState({ opacity: 1 }));
+    }
+
+    // --- ENCABEZADO ---
+    doc.setFillColor(0, 0, 0); // Black background to match logo
+    doc.rect(0, 0, pageWidth, 35, "F");
+
+    if (logo.data) {
+      const maxH = 25;
+      const ratio = logo.w / logo.h;
+      const w = maxH * ratio;
+      doc.addImage(logo.data, "PNG", 15, 5, w, maxH);
+    } else {
+      writeText("RODMELL AUTOS", 15, 15, 20, "helvetica", "bold", "#eab308");
+      writeText("Concesionaria Oficial", 15, 22, 10, "helvetica", "normal", "#ffffff");
+    }
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor("#ffffff");
+    doc.text("Av. Libertador 1234, CABA", pageWidth - 15, 12, { align: "right" });
+    doc.text("Tel: +54 9 11 1234-5678", pageWidth - 15, 17, { align: "right" });
+    doc.text("contacto@rodmell.com.ar", pageWidth - 15, 22, { align: "right" });
+    doc.text("CUIT: 30-12345678-9", pageWidth - 15, 27, { align: "right" });
+
+    let decorY = 45;
+
+    // --- TÍTULO Y NÚMERO DE COMPROBANTE ---
+    const titulos = {
+      VENTA: "COMPROBANTE DE OPERACIÓN",
+      PAGO: "COMPROBANTE DE PAGO",
+      CUOTA: "COMPROBANTE DE CUOTA"
+    };
+    
+    writeText(titulos[type], 15, decorY, 16, "helvetica", "bold", "#111111");
+    
+    const compNumber = `Nº: ${idValue.length > 8 ? idValue.slice(-6).toUpperCase() : idValue}`;
+    doc.setFontSize(12);
+    doc.setTextColor("#555555");
+    doc.text(compNumber, pageWidth - 15, decorY, { align: "right" });
+    decorY += 6;
+    doc.setFontSize(10);
+    const fechaStr = item ? new Date(item.fecha || item.fechaPago || item.createdAt || new Date()).toLocaleString() : new Date(sale.createdAt || new Date()).toLocaleString();
+    doc.text(`Fecha: ${fechaStr} - Pág ${pageNumber}/${totalPages}`, pageWidth - 15, decorY, { align: "right" });
+    decorY += 10;
+
+    // Línea divisoria
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, decorY, pageWidth - 15, decorY);
+
+    // --- SELLO "PAGADO" DIAGONAL (Dibujado al final para que quede por encima) ---
+    doc.setGState(new (doc as any).GState({ opacity: 0.20 })); // Más intenso
+    doc.setFontSize(100);
+    doc.setTextColor("#ef4444"); // Rojo
+    doc.setFont("helvetica", "bolditalic");
+    doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
+    doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  };
+
+  let y = 72; // Start content below header
 
   // --- INFORMACIÓN DEL CLIENTE Y VEHÍCULO (Grid) ---
   doc.setFillColor(245, 245, 245);
@@ -158,13 +169,18 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
     headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255], fontStyle: "bold" },
     styles: { font: "helvetica", fontSize: 10, cellPadding: 4 },
     columnStyles: { 2: { halign: "right" } },
-    margin: { left: 15, right: 15 },
+    margin: { top: 75, left: 15, right: 15 },
   });
 
   y = (doc as any).lastAutoTable.finalY + 10;
 
   if (type === "VENTA") {
     // --- RESUMEN DE SALDOS ---
+    if (y + 40 > pageHeight - 60) {
+      doc.addPage();
+      y = 75;
+    }
+
     const tableWidth = 85;
     const startX = pageWidth - 15 - tableWidth;
     
@@ -191,10 +207,14 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
     writeText("Saldo Pendiente:", startX + 5, y + 32, 10, "helvetica", "bold");
     doc.text(`$${sale.saldoPendiente?.toLocaleString()}`, startX + tableWidth - 5, y + 32, { align: "right" });
 
-    y += 50;
+    y += 45;
 
     // --- OBSERVACIONES ---
     if (sale.observaciones) {
+      if (y + 20 > pageHeight - 60) {
+        doc.addPage();
+        y = 75;
+      }
       writeText("OBSERVACIONES:", 15, y, 10, "helvetica", "bold");
       writeText(sale.observaciones, 15, y + 6, 9, "helvetica", "normal");
       y += 20;
@@ -204,12 +224,11 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
   }
 
   // --- FIRMAS ---
-  // Ensure we don't go to next page, if so, add page
   if (y > pageHeight - 60) {
     doc.addPage();
-    y = 30;
+    y = 75;
   } else {
-    y = pageHeight - 60; // Force signatures to bottom
+    y = pageHeight - 40; // Force signatures to bottom area
   }
 
   const sigY = y + 15;
@@ -238,13 +257,12 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
   const splitText = doc.splitTextToSize(legalText, pageWidth - 30);
   doc.text(splitText, 15, pageHeight - 15);
 
-  // --- SELLO "PAGADO" DIAGONAL (Dibujado al final para que quede por encima) ---
-  doc.setGState(new (doc as any).GState({ opacity: 0.20 })); // Más intenso
-  doc.setFontSize(100);
-  doc.setTextColor("#ef4444"); // Rojo
-  doc.setFont("helvetica", "bolditalic");
-  doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  // Apply decorations to all pages
+  const pageCount = (doc.internal as any).getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    drawDecorations(i, pageCount);
+  }
 
   // Descargar PDF
   doc.save(`Comprobante_${idValue}.pdf`);
