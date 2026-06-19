@@ -133,6 +133,7 @@ model Operacion {
   observaciones     String?
   total             Float
   saldoPendiente    Float
+  comprobante       String?   @unique
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -147,14 +148,16 @@ model Operacion {
 }
 
 model Pago {
-  id           String    @id @default(cuid())
-  operacionId  String
-  fecha        DateTime
-  importe      Float
-  medioPago    MedioPago
-  observaciones String?
+  id              String    @id @default(cuid())
+  operacionId     String
+  fecha           DateTime
+  importe         Float
+  medioPago       MedioPago
+  observaciones   String?
+  comprobante     String?   @unique
+  comprobanteUrl  String?
 
-  operacion    Operacion @relation(fields: [operacionId], references: [id])
+  operacion       Operacion @relation(fields: [operacionId], references: [id])
 }
 
 model Cuota {
@@ -164,6 +167,10 @@ model Cuota {
   valor            Float
   fechaVencimiento DateTime
   estado           EstadoCuota @default(PENDIENTE)
+  medioPago        MedioPago?
+  fechaPago        DateTime?
+  comprobante      String?     @unique
+  comprobanteUrl   String?
 
   operacion        Operacion   @relation(fields: [operacionId], references: [id])
 }
@@ -179,17 +186,18 @@ model Gasto {
 }
 
 model Documento {
-  id           String        @id @default(cuid())
-  operacionId  String?
-  clienteId    String?
-  vehiculoId   String?
-  tipo         TipoDocumento
-  url          String
+  id            String        @id @default(cuid())
+  operacionId   String?
+  clienteId     String?
+  vehiculoId    String?
+  tipo          TipoDocumento
+  url           String
   nombreArchivo String
+  observaciones String?
 
-  operacion    Operacion?    @relation(fields: [operacionId], references: [id])
-  cliente      Cliente?      @relation(fields: [clienteId], references: [id])
-  vehiculo     Vehiculo?     @relation(fields: [vehiculoId], references: [id])
+  operacion     Operacion?    @relation(fields: [operacionId], references: [id])
+  cliente       Cliente?      @relation(fields: [clienteId], references: [id])
+  vehiculo      Vehiculo?     @relation(fields: [vehiculoId], references: [id])
 }
 
 model ActivityLog {

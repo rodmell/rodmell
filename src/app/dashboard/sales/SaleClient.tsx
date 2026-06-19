@@ -408,7 +408,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
         <Input 
-          placeholder="Buscar por cliente, vehículo o forma de pago..." 
+          placeholder="Buscar por cliente, vehículo, forma de pago o Nº comprobante..." 
           className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -423,28 +423,30 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
               <TableHead className="text-zinc-400">Cliente</TableHead>
               <TableHead className="text-zinc-400">Vehículo</TableHead>
               <TableHead className="text-zinc-400">Forma Pago</TableHead>
+              <TableHead className="text-zinc-400">Nº Comp.</TableHead>
               <TableHead className="text-zinc-400 text-right">Total</TableHead>
               <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sales.filter(s => 
-              `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago}`.toLowerCase().includes(searchTerm.toLowerCase())
+              `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
             ).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">
+                <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
                   No hay ventas registradas
                 </TableCell>
               </TableRow>
             ) : (
               sales.filter(s => 
-                `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago}`.toLowerCase().includes(searchTerm.toLowerCase())
+                `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
               ).map((s) => (
                 <TableRow key={s.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="text-zinc-300">{new Date(s.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>
                   <TableCell className="text-zinc-300">{s.vehiculo?.marca} {s.vehiculo?.modelo}</TableCell>
                   <TableCell className="text-zinc-300">{s.formaPago}</TableCell>
+                  <TableCell className="text-yellow-500 font-mono text-xs">{s.comprobante || "-"}</TableCell>
                   <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">

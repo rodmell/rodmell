@@ -152,7 +152,7 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
         <Input 
-          placeholder="Buscar por nombre, DNI, teléfono o email..." 
+          placeholder="Buscar por nombre, DNI, teléfono, email o Nº de comprobante..." 
           className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -171,18 +171,30 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.filter(c => 
-              `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email}`.toLowerCase().includes(searchTerm.toLowerCase())
-            ).length === 0 ? (
+            {customers.filter(c => {
+              const allComprobantes = c.operaciones?.flatMap((op: any) => [
+                op.comprobante,
+                ...op.pagos?.map((p: any) => p.comprobante),
+                ...op.cuotas?.map((cu: any) => cu.comprobante)
+              ]).filter(Boolean).join(" ") || "";
+              
+              return `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email} ${allComprobantes}`.toLowerCase().includes(searchTerm.toLowerCase());
+            }).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
                 <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
                   No hay clientes registrados
                 </TableCell>
               </TableRow>
             ) : (
-              customers.filter(c => 
-                `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email}`.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map((c) => (
+              customers.filter(c => {
+                const allComprobantes = c.operaciones?.flatMap((op: any) => [
+                  op.comprobante,
+                  ...op.pagos?.map((p: any) => p.comprobante),
+                  ...op.cuotas?.map((cu: any) => cu.comprobante)
+                ]).filter(Boolean).join(" ") || "";
+                
+                return `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email} ${allComprobantes}`.toLowerCase().includes(searchTerm.toLowerCase());
+              }).map((c) => (
                 <TableRow key={c.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="font-medium text-white">{c.nombreCompleto}</TableCell>
                   <TableCell className="text-zinc-300">{c.dni}</TableCell>

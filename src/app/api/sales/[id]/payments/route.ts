@@ -35,7 +35,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const { id } = await params;
     const body = await req.json();
-    const { importe, medioPago, observaciones, fecha } = body;
+    const { importe, medioPago, observaciones, fecha, comprobanteUrl } = body;
+
+    const generatedComprobante = "PG-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
     const pago = await prisma.pago.create({
       data: {
@@ -43,7 +45,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         importe: parseFloat(importe),
         medioPago: medioPago,
         observaciones: observaciones,
-        fecha: new Date(fecha || new Date())
+        fecha: new Date(fecha || new Date()),
+        comprobante: generatedComprobante,
+        comprobanteUrl: comprobanteUrl || null,
       }
     });
 

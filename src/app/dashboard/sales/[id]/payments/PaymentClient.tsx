@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign } from "lucide-react";
+import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,21 +24,41 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
   const [openPago, setOpenPago] = useState(false);
   const [openCuotas, setOpenCuotas] = useState(false);
 
-  const [pagoData, setPagoData] = useState({ importe: "", medioPago: "EFECTIVO", observaciones: "" });
+  const [pagoData, setPagoData] = useState({ importe: "", medioPago: "EFECTIVO", observaciones: "", file: null as File | null });
   const [cuotaData, setCuotaData] = useState({ cantidad: "12", valor: "", fechaInicio: new Date().toISOString().split("T")[0] });
+
+  const [openCuotaPay, setOpenCuotaPay] = useState(false);
+  const [selectedCuota, setSelectedCuota] = useState<any>(null);
+  const [cuotaPayData, setCuotaPayData] = useState({ medioPago: "EFECTIVO", file: null as File | null });
 
   const handleAddPago = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      let comprobanteUrl = null;
+      if (pagoData.file) {
+        const formData = new FormData();
+        formData.append("file", pagoData.file);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const blob = await uploadRes.json();
+          comprobanteUrl = blob.url;
+        }
+      }
+
       const res = await fetch(`/api/sales/${sale.id}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pagoData),
+        body: JSON.stringify({
+          importe: pagoData.importe,
+          medioPago: pagoData.medioPago,
+          observaciones: pagoData.observaciones,
+          comprobanteUrl,
+        }),
       });
       if (res.ok) {
         setOpenPago(false);
-        setPagoData({ importe: "", medioPago: "EFECTIVO", observaciones: "" });
+        setPagoData({ importe: "", medioPago: "EFECTIVO", observaciones: "", file: null });
         toast.success("Pago registrado correctamente");
         router.refresh();
       } else {
@@ -72,17 +92,36 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
     setLoading(false);
   };
 
-  const toggleCuotaStatus = async (cuotaId: string, currentStatus: string) => {
-    // We remove native confirm to make it seamless, user can just click again to revert
+  const handlePayCuota = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCuota) return;
+    setLoading(true);
     try {
-      const newStatus = currentStatus === "PAGADA" ? "PENDIENTE" : "PAGADA";
-      const res = await fetch(`/api/installments/${cuotaId}`, {
+      let comprobanteUrl = null;
+      if (cuotaPayData.file) {
+        const formData = new FormData();
+        formData.append("file", cuotaPayData.file);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const blob = await uploadRes.json();
+          comprobanteUrl = blob.url;
+        }
+      }
+
+      const res = await fetch(`/api/installments/${selectedCuota.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: newStatus }),
+        body: JSON.stringify({ 
+          estado: "PAGADA",
+          medioPago: cuotaPayData.medioPago,
+          comprobanteUrl,
+        }),
       });
       if (res.ok) {
-        toast.success(`Cuota marcada como ${newStatus}`);
+        toast.success(`Cuota marcada como PAGADA`);
+        setOpenCuotaPay(false);
+        setSelectedCuota(null);
+        setCuotaPayData({ medioPago: "EFECTIVO", file: null });
         router.refresh();
       } else {
         toast.error("No se pudo actualizar la cuota");
@@ -90,6 +129,42 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
     } catch {
       toast.error("Error de conexión");
     }
+    setLoading(false);
+  };
+
+  const toggleCuotaStatus = async (cuotaId: string, currentStatus: string) => {
+    if (currentStatus !== "PAGADA") {
+      const cuota = sale.cuotas.find((c: any) => c.id === cuotaId);
+      setSelectedCuota(cuota);
+      setOpenCuotaPay(true);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/installments/${cuotaId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: "PENDIENTE" }),
+      });
+      if (res.ok) {
+        toast.success(`Cuota marcada como PENDIENTE`);
+        router.refresh();
+      } else {
+        toast.error("No se pudo actualizar la cuota");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+  };
+
+  const handleDownloadPagoReceipt = async (pago: any) => {
+    const { generateReceiptPDF } = await import('@/lib/generateReceipt');
+    generateReceiptPDF(sale, "PAGO", pago);
+  };
+
+  const handleDownloadCuotaReceipt = async (cuota: any) => {
+    const { generateReceiptPDF } = await import('@/lib/generateReceipt');
+    generateReceiptPDF(sale, "CUOTA", cuota);
   };
 
   return (
@@ -170,6 +245,10 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                     <label className="text-sm font-medium text-zinc-300">Observaciones</label>
                     <Input className="bg-[#111] border-[#333]" value={pagoData.observaciones} onChange={e => setPagoData({...pagoData, observaciones: e.target.value})} />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-zinc-300">Archivo Adjunto (Opcional)</label>
+                    <Input type="file" className="bg-[#111] border-[#333] text-zinc-400" onChange={e => setPagoData({...pagoData, file: e.target.files?.[0] || null})} />
+                  </div>
                   <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
                     {loading ? "Guardando..." : "Guardar Pago"}
                   </Button>
@@ -192,9 +271,22 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                       <div>
                         <p className="text-white font-medium">{pago.medioPago === "SENA" ? "SEÑA" : pago.medioPago}</p>
                         <p className="text-zinc-500 text-xs">{new Date(pago.fecha).toLocaleDateString()} {pago.observaciones ? `• ${pago.observaciones}` : ""}</p>
+                        <div className="flex gap-2 mt-1">
+                          {pago.comprobanteUrl && (
+                            <a href={pago.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">Ver adjunto</a>
+                          )}
+                          {pago.comprobante && (
+                            <span className="text-xs text-yellow-500 font-mono">Nº {pago.comprobante}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <span className="text-white font-bold">${pago.importe.toLocaleString()}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-white font-bold">${pago.importe.toLocaleString()}</span>
+                      <button onClick={() => handleDownloadPagoReceipt(pago)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -256,22 +348,40 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                       <div>
                         <p className="text-white font-medium">${cuota.valor.toLocaleString()}</p>
                         <p className="text-zinc-500 text-xs">Vence: {new Date(cuota.fechaVencimiento).toLocaleDateString()}</p>
+                        {cuota.estado === "PAGADA" && (
+                          <div className="flex gap-2 mt-1">
+                            {cuota.comprobanteUrl && (
+                              <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">Ver adjunto</a>
+                            )}
+                            {cuota.comprobante && (
+                              <span className="text-xs text-yellow-500 font-mono">Nº {cuota.comprobante}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    <button 
-                      onClick={() => toggleCuotaStatus(cuota.id, cuota.estado)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                        cuota.estado === "PAGADA" 
-                          ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" 
-                          : cuota.estado === "VENCIDA" 
-                            ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" 
-                            : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20"
-                      }`}
-                    >
-                      {cuota.estado === "PAGADA" ? <CheckCircle2 className="w-3.5 h-3.5" /> : cuota.estado === "VENCIDA" ? <XCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                      {cuota.estado}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => toggleCuotaStatus(cuota.id, cuota.estado)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                          cuota.estado === "PAGADA" 
+                            ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" 
+                            : cuota.estado === "VENCIDA" 
+                              ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" 
+                              : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20"
+                        }`}
+                      >
+                        {cuota.estado === "PAGADA" ? <CheckCircle2 className="w-3.5 h-3.5" /> : cuota.estado === "VENCIDA" ? <XCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                        {cuota.estado}
+                      </button>
+                      
+                      {cuota.estado === "PAGADA" && (
+                        <button onClick={() => handleDownloadCuotaReceipt(cuota)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -280,6 +390,32 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
         </div>
 
       </div>
+
+      <Dialog open={openCuotaPay} onOpenChange={setOpenCuotaPay}>
+        <DialogContent className="bg-[#0a0a0a] border-[#222] text-white">
+          <DialogHeader>
+            <DialogTitle>Marcar Cuota como Pagada</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handlePayCuota} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Medio de Pago</label>
+              <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={cuotaPayData.medioPago} onChange={e => setCuotaPayData({...cuotaPayData, medioPago: e.target.value})}>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="SENA">Seña</option>
+                <option value="TARJETA">Tarjeta</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Comprobante del cliente (Opcional)</label>
+              <Input type="file" className="bg-[#111] border-[#333] text-zinc-400" onChange={e => setCuotaPayData({...cuotaPayData, file: e.target.files?.[0] || null})} />
+            </div>
+            <Button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 text-white mt-6">
+              {loading ? "Guardando..." : "Confirmar Pago"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

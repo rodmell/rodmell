@@ -4,6 +4,14 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   try {
     const customers = await prisma.cliente.findMany({
+      include: {
+        operaciones: {
+          include: {
+            pagos: true,
+            cuotas: true
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(customers);

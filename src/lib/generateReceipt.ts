@@ -3,7 +3,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 
-export const generateReceiptPDF = async (sale: any) => {
+export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CUOTA" = "VENTA", item?: any) => {
   // Inicializamos el documento A4
   const doc = new jsPDF({
     orientation: "portrait",
@@ -46,7 +46,7 @@ export const generateReceiptPDF = async (sale: any) => {
   // --- MARCA DE AGUA INSTITUCIONAL ---
   if (favicon.data) {
     doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-    const watermarkSize = 120;
+    const watermarkSize = 180; // Hecho más grande
     doc.addImage(favicon.data, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
     doc.setGState(new (doc as any).GState({ opacity: 1 }));
   }
@@ -77,14 +77,23 @@ export const generateReceiptPDF = async (sale: any) => {
   let y = 45;
 
   // --- TÍTULO Y NÚMERO DE COMPROBANTE ---
-  writeText("COMPROBANTE DE OPERACIÓN", 15, y, 16, "helvetica", "bold", "#111111");
-  const compNumber = `Nº: ${sale.id.slice(-6).toUpperCase()}`;
+  const titulos = {
+    VENTA: "COMPROBANTE DE OPERACIÓN",
+    PAGO: "COMPROBANTE DE PAGO",
+    CUOTA: "COMPROBANTE DE CUOTA"
+  };
+  
+  writeText(titulos[type], 15, y, 16, "helvetica", "bold", "#111111");
+  
+  const idValue = item ? item.comprobante || item.id : sale.comprobante || sale.id;
+  const compNumber = `Nº: ${idValue.length > 8 ? idValue.slice(-6).toUpperCase() : idValue}`;
   doc.setFontSize(12);
   doc.setTextColor("#555555");
   doc.text(compNumber, pageWidth - 15, y, { align: "right" });
   y += 6;
   doc.setFontSize(10);
-  doc.text(`Fecha: ${new Date().toLocaleString()}`, pageWidth - 15, y, { align: "right" });
+  const fechaStr = item ? new Date(item.fecha || item.fechaPago || item.createdAt || new Date()).toLocaleString() : new Date(sale.createdAt || new Date()).toLocaleString();
+  doc.text(`Fecha: ${fechaStr}`, pageWidth - 15, y, { align: "right" });
   y += 10;
 
   // Línea divisoria
@@ -119,19 +128,26 @@ export const generateReceiptPDF = async (sale: any) => {
   y += 5;
 
   const tableData = [];
-  tableData.push(["Precio Base Vehículo", `Venta de ${sale.vehiculo?.marca} ${sale.vehiculo?.modelo}`, `$${sale.precioVehiculo?.toLocaleString()}`]);
   
-  if (sale.efectivo && sale.efectivo > 0) {
-    tableData.push(["Pago en Efectivo", "Abono inicial en efectivo", `-$${sale.efectivo.toLocaleString()}`]);
-  }
-  if (sale.credito && sale.credito > 0) {
-    tableData.push(["Crédito", "Monto financiado", `-$${sale.credito.toLocaleString()}`]);
-  }
-  if (sale.quebranto && sale.quebranto > 0) {
-    tableData.push(["Costo de Quebranto", `Recargo por financiación (${sale.porcentajeQuebranto}%)`, `$${sale.quebranto.toLocaleString()}`]);
-  }
-  if (sale.autoPartePago && sale.autoPartePago > 0) {
-    tableData.push(["Auto en Parte de Pago", sale.detalleAutoPartePago || "Entrega de vehículo", `-$${sale.autoPartePago.toLocaleString()}`]);
+  if (type === "VENTA") {
+    tableData.push(["Precio Base Vehículo", `Venta de ${sale.vehiculo?.marca} ${sale.vehiculo?.modelo}`, `$${sale.precioVehiculo?.toLocaleString()}`]);
+    
+    if (sale.efectivo && sale.efectivo > 0) {
+      tableData.push(["Pago en Efectivo", "Abono inicial en efectivo", `-$${sale.efectivo.toLocaleString()}`]);
+    }
+    if (sale.credito && sale.credito > 0) {
+      tableData.push(["Crédito", "Monto financiado", `-$${sale.credito.toLocaleString()}`]);
+    }
+    if (sale.quebranto && sale.quebranto > 0) {
+      tableData.push(["Costo de Quebranto", `Recargo por financiación (${sale.porcentajeQuebranto}%)`, `$${sale.quebranto.toLocaleString()}`]);
+    }
+    if (sale.autoPartePago && sale.autoPartePago > 0) {
+      tableData.push(["Auto en Parte de Pago", sale.detalleAutoPartePago || "Entrega de vehículo", `-$${sale.autoPartePago.toLocaleString()}`]);
+    }
+  } else if (type === "PAGO") {
+    tableData.push([`Pago: ${item.medioPago === "SENA" ? "Seña" : item.medioPago}`, item.observaciones || "Abono a cuenta", `$${item.importe.toLocaleString()}`]);
+  } else if (type === "CUOTA") {
+    tableData.push([`Cuota Nº ${item.numeroCuota}`, `Pago de cuota mediante ${item.medioPago || "EFECTIVO"}`, `$${item.valor.toLocaleString()}`]);
   }
 
   autoTable(doc, {
@@ -147,39 +163,43 @@ export const generateReceiptPDF = async (sale: any) => {
 
   y = (doc as any).lastAutoTable.finalY + 10;
 
-  // --- RESUMEN DE SALDOS ---
-  const tableWidth = 85;
-  const startX = pageWidth - 15 - tableWidth;
-  
-  doc.setFillColor(245, 245, 245);
-  doc.rect(startX, y, tableWidth, 38, "F");
+  if (type === "VENTA") {
+    // --- RESUMEN DE SALDOS ---
+    const tableWidth = 85;
+    const startX = pageWidth - 15 - tableWidth;
+    
+    doc.setFillColor(245, 245, 245);
+    doc.rect(startX, y, tableWidth, 38, "F");
 
-  // Condición de pago en la izquierda
-  writeText("CONDICIONES DE PAGO:", 15, y + 8, 10, "helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  const splitCond = doc.splitTextToSize(sale.formaPago || "No especificada", startX - 25);
-  doc.text(splitCond, 15, y + 14);
+    // Condición de pago en la izquierda
+    writeText("CONDICIONES DE PAGO:", 15, y + 8, 10, "helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    const splitCond = doc.splitTextToSize(sale.formaPago || "No especificada", startX - 25);
+    doc.text(splitCond, 15, y + 14);
 
-  // Caja de resumen
-  writeText("RESUMEN", startX + 5, y + 8, 10, "helvetica", "bold");
-  
-  writeText("Total a Pagar:", startX + 5, y + 16, 10, "helvetica", "normal");
-  doc.text(`$${sale.total?.toLocaleString()}`, startX + tableWidth - 5, y + 16, { align: "right" });
+    // Caja de resumen
+    writeText("RESUMEN", startX + 5, y + 8, 10, "helvetica", "bold");
+    
+    writeText("Total a Pagar:", startX + 5, y + 16, 10, "helvetica", "normal");
+    doc.text(`$${sale.total?.toLocaleString()}`, startX + tableWidth - 5, y + 16, { align: "right" });
 
-  const abonado = (sale.total || 0) - (sale.saldoPendiente || 0);
-  writeText("Monto Abonado:", startX + 5, y + 24, 10, "helvetica", "normal");
-  doc.text(`$${abonado.toLocaleString()}`, startX + tableWidth - 5, y + 24, { align: "right" });
+    const abonado = (sale.total || 0) - (sale.saldoPendiente || 0);
+    writeText("Monto Abonado:", startX + 5, y + 24, 10, "helvetica", "normal");
+    doc.text(`$${abonado.toLocaleString()}`, startX + tableWidth - 5, y + 24, { align: "right" });
 
-  writeText("Saldo Pendiente:", startX + 5, y + 32, 10, "helvetica", "bold");
-  doc.text(`$${sale.saldoPendiente?.toLocaleString()}`, startX + tableWidth - 5, y + 32, { align: "right" });
+    writeText("Saldo Pendiente:", startX + 5, y + 32, 10, "helvetica", "bold");
+    doc.text(`$${sale.saldoPendiente?.toLocaleString()}`, startX + tableWidth - 5, y + 32, { align: "right" });
 
-  y += 50;
+    y += 50;
 
-  // --- OBSERVACIONES ---
-  if (sale.observaciones) {
-    writeText("OBSERVACIONES:", 15, y, 10, "helvetica", "bold");
-    writeText(sale.observaciones, 15, y + 6, 9, "helvetica", "normal");
+    // --- OBSERVACIONES ---
+    if (sale.observaciones) {
+      writeText("OBSERVACIONES:", 15, y, 10, "helvetica", "bold");
+      writeText(sale.observaciones, 15, y + 6, 9, "helvetica", "normal");
+      y += 20;
+    }
+  } else {
     y += 20;
   }
 
@@ -219,7 +239,7 @@ export const generateReceiptPDF = async (sale: any) => {
   doc.text(splitText, 15, pageHeight - 15);
 
   // --- SELLO "PAGADO" DIAGONAL (Dibujado al final para que quede por encima) ---
-  doc.setGState(new (doc as any).GState({ opacity: 0.10 }));
+  doc.setGState(new (doc as any).GState({ opacity: 0.20 })); // Más intenso
   doc.setFontSize(100);
   doc.setTextColor("#ef4444"); // Rojo
   doc.setFont("helvetica", "bolditalic");
@@ -227,5 +247,5 @@ export const generateReceiptPDF = async (sale: any) => {
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // Descargar PDF
-  doc.save(`Comprobante_${sale.id}.pdf`);
+  doc.save(`Comprobante_${idValue}.pdf`);
 };

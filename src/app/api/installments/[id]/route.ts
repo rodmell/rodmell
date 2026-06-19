@@ -14,11 +14,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { estado } = body;
+    const { estado, medioPago, comprobanteUrl } = body;
+
+    const dataToUpdate: any = { estado };
+
+    if (estado === "PAGADA") {
+      dataToUpdate.medioPago = medioPago || "EFECTIVO";
+      dataToUpdate.fechaPago = new Date();
+      dataToUpdate.comprobanteUrl = comprobanteUrl || null;
+      // Only generate if not already generated
+      const existing = await prisma.cuota.findUnique({ where: { id } });
+      if (!existing?.comprobante) {
+        dataToUpdate.comprobante = "CT-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      }
+    }
 
     const cuota = await prisma.cuota.update({
       where: { id },
-      data: { estado }
+      data: dataToUpdate
     });
 
     // If it's marked as PAGADA, we should decrement the saldoPendiente from Operacion

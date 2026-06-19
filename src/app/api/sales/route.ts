@@ -19,6 +19,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const generatedComprobante = "OP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
     const sale = await prisma.operacion.create({
       data: {
         clienteId: body.clienteId,
@@ -36,6 +38,7 @@ export async function POST(req: Request) {
         
         total: parseFloat(body.total),
         saldoPendiente: parseFloat(body.saldoPendiente),
+        comprobante: generatedComprobante,
       },
     });
     
