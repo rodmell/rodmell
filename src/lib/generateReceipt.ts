@@ -23,7 +23,7 @@ export const generateReceiptPDF = async (sale: any) => {
   };
 
   // Helper para cargar imagen
-  const loadImage = async (url: string): Promise<string> => {
+  const loadImage = async (url: string): Promise<{data: string, w: number, h: number}> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'Anonymous';
@@ -33,42 +33,42 @@ export const generateReceiptPDF = async (sale: any) => {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
+        resolve({ data: canvas.toDataURL('image/png'), w: img.width, h: img.height });
       };
-      img.onerror = () => resolve(""); // Resolve empty string on error to avoid breaking PDF
+      img.onerror = () => resolve({ data: "", w: 0, h: 0 }); // Resolve empty on error
       img.src = url;
     });
   };
 
-  const logoBase64 = await loadImage("/logo.png");
-  const faviconBase64 = await loadImage("/favicon.png");
+  const logo = await loadImage("/logo.png");
+  const favicon = await loadImage("/favicon.png");
 
   // --- MARCA DE AGUA INSTITUCIONAL ---
-  if (faviconBase64) {
-    doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
-    // Centered and large (120x120 mm)
+  if (favicon.data) {
+    doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
     const watermarkSize = 120;
-    doc.addImage(faviconBase64, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
+    doc.addImage(favicon.data, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
     doc.setGState(new (doc as any).GState({ opacity: 1 }));
   }
 
   // --- SELLO "PAGADO" DIAGONAL ---
-  if (sale.saldoPendiente <= 0) {
-    doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-    doc.setFontSize(100);
-    doc.setTextColor("#ef4444"); // Rojo
-    doc.setFont("helvetica", "bolditalic");
-    doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
-    doc.setGState(new (doc as any).GState({ opacity: 1 }));
-  }
+  doc.setGState(new (doc as any).GState({ opacity: 0.10 }));
+  doc.setFontSize(100);
+  doc.setTextColor("#ef4444"); // Rojo
+  doc.setFont("helvetica", "bolditalic");
+  doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // --- ENCABEZADO ---
   doc.setFillColor(15, 15, 15);
   doc.rect(0, 0, pageWidth, 35, "F");
 
-  if (logoBase64) {
-    // Top left logo
-    doc.addImage(logoBase64, "PNG", 15, 5, 45, 25);
+  if (logo.data) {
+    // Top left logo, preserving aspect ratio
+    const maxH = 25;
+    const ratio = logo.w / logo.h;
+    const w = maxH * ratio;
+    doc.addImage(logo.data, "PNG", 15, 5, w, maxH);
   } else {
     writeText("RODMELL AUTOS", 15, 15, 20, "helvetica", "bold", "#eab308");
     writeText("Concesionaria Oficial", 15, 22, 10, "helvetica", "normal", "#ffffff");
@@ -153,21 +153,33 @@ export const generateReceiptPDF = async (sale: any) => {
   y = (doc as any).lastAutoTable.finalY + 10;
 
   // --- RESUMEN DE SALDOS ---
-  const tableWidth = 80;
+  const tableWidth = 85;
   const startX = pageWidth - 15 - tableWidth;
   
   doc.setFillColor(245, 245, 245);
-  doc.rect(startX, y, tableWidth, 30, "F");
+  doc.rect(startX, y, tableWidth, 38, "F");
 
+  // Condición de pago en la izquierda
+  writeText("CONDICIONES DE PAGO:", 15, y + 8, 10, "helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  const splitCond = doc.splitTextToSize(sale.formaPago || "No especificada", startX - 25);
+  doc.text(splitCond, 15, y + 14);
+
+  // Caja de resumen
   writeText("RESUMEN", startX + 5, y + 8, 10, "helvetica", "bold");
   
   writeText("Total a Pagar:", startX + 5, y + 16, 10, "helvetica", "normal");
   doc.text(`$${sale.total?.toLocaleString()}`, startX + tableWidth - 5, y + 16, { align: "right" });
 
-  writeText("Saldo Pendiente:", startX + 5, y + 24, 10, "helvetica", "bold");
-  doc.text(`$${sale.saldoPendiente?.toLocaleString()}`, startX + tableWidth - 5, y + 24, { align: "right" });
+  const abonado = (sale.total || 0) - (sale.saldoPendiente || 0);
+  writeText("Monto Abonado:", startX + 5, y + 24, 10, "helvetica", "normal");
+  doc.text(`$${abonado.toLocaleString()}`, startX + tableWidth - 5, y + 24, { align: "right" });
 
-  y += 45;
+  writeText("Saldo Pendiente:", startX + 5, y + 32, 10, "helvetica", "bold");
+  doc.text(`$${sale.saldoPendiente?.toLocaleString()}`, startX + tableWidth - 5, y + 32, { align: "right" });
+
+  y += 50;
 
   // --- OBSERVACIONES ---
   if (sale.observaciones) {
