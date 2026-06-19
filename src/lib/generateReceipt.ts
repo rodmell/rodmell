@@ -237,11 +237,11 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
   }
 
   // --- FIRMAS ---
-  if (y > pageHeight - 60) {
+  if (y > pageHeight - 75) {
     doc.addPage();
     y = 75;
   } else {
-    y = pageHeight - 40; // Force signatures to bottom area
+    y = pageHeight - 55; // Force signatures to bottom area
   }
 
   const sigY = y + 15;
