@@ -270,128 +270,134 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
           <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Nueva Operación
           </DialogTrigger>
-          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white max-w-6xl max-h-[90vh] overflow-y-auto rounded-none shadow-2xl">
+          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white sm:max-w-3xl md:max-w-5xl max-h-[90vh] overflow-y-auto rounded-none shadow-2xl">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Venta" : "Registrar Venta"}</DialogTitle>
               <DialogDescription className="text-zinc-400">
                 Completá los detalles de la venta. Los totales se calculan automáticamente.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-              
-              {/* Cliente y Vehículo */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-sm font-medium text-zinc-300">Cliente</label>
-                  <SearchableSelect 
-                    placeholder="Escribí para buscar..."
-                    value={formData.clienteId}
-                    onChange={(val: string) => setFormData({...formData, clienteId: val})}
-                    options={customers.map(c => ({ value: c.id, label: `${c.nombreCompleto} (DNI: ${c.dni || "-"})` }))}
-                  />
-                </div>
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <label className="text-sm font-medium text-zinc-300">Vehículo</label>
-                  <SearchableSelect 
-                    placeholder="Escribí para buscar..."
-                    value={formData.vehiculoId}
-                    onChange={(val: string) => {
-                      setFormData({...formData, vehiculoId: val});
-                      // Optional: auto-fill price when selected
-                      const v = vehicles.find(v => v.id === val);
-                      if (v && v.precioVenta) {
-                        setFormData(prev => ({...prev, vehiculoId: val, precioVehiculo: v.precioVenta.toString()}));
-                      }
-                    }}
-                    options={vehicles.map(v => ({ value: v.id, label: `${v.marca} ${v.modelo} - ${v.dominio} ($${v.precioVenta})` }))}
-                  />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <label className="text-sm font-medium text-zinc-300">Precio del Vehículo Acordado</label>
-                  <Input required type="number" className="bg-[#111] border-[#333] text-lg text-yellow-500 font-semibold" value={formData.precioVehiculo} onChange={e => setFormData({...formData, precioVehiculo: e.target.value})} />
-                </div>
-              </div>
-
-              {/* Formas de Pago */}
-              <div className="space-y-4 border border-[#333] p-4 rounded-lg bg-[#111]/50">
-                <h3 className="text-sm font-medium text-zinc-300 mb-2">Composición del Pago</h3>
+            <form onSubmit={handleSubmit} className="mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
-                {/* EFECTIVO */}
-                <div className="flex flex-col space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="chk-efectivo" checked={formData.hasEfectivo} onCheckedChange={(c) => setFormData({...formData, hasEfectivo: !!c})} className="border-zinc-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:text-black" />
-                    <Label htmlFor="chk-efectivo" className="text-zinc-300 cursor-pointer">Efectivo</Label>
-                  </div>
-                  {formData.hasEfectivo && (
-                    <div className="pl-6 space-y-2">
-                      <Label className="text-xs text-zinc-500">Monto en Efectivo</Label>
-                      <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.efectivo} onChange={e => setFormData({...formData, efectivo: e.target.value})} />
+                {/* COLUMNA IZQUIERDA: Cliente y Vehículo */}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-sm font-medium text-zinc-300">Cliente</label>
+                      <SearchableSelect 
+                        placeholder="Escribí para buscar..."
+                        value={formData.clienteId}
+                        onChange={(val: string) => setFormData({...formData, clienteId: val})}
+                        options={customers.map(c => ({ value: c.id, label: `${c.nombreCompleto} (DNI: ${c.dni || "-"})` }))}
+                      />
                     </div>
-                  )}
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-sm font-medium text-zinc-300">Vehículo</label>
+                      <SearchableSelect 
+                        placeholder="Escribí para buscar..."
+                        value={formData.vehiculoId}
+                        onChange={(val: string) => {
+                          setFormData({...formData, vehiculoId: val});
+                          const v = vehicles.find(v => v.id === val);
+                          if (v && v.precioVenta) {
+                            setFormData(prev => ({...prev, vehiculoId: val, precioVehiculo: v.precioVenta.toString()}));
+                          }
+                        }}
+                        options={vehicles.map(v => ({ value: v.id, label: `${v.marca} ${v.modelo} - ${v.dominio} ($${v.precioVenta})` }))}
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-sm font-medium text-zinc-300">Precio del Vehículo Acordado</label>
+                      <Input required type="number" className="bg-[#111] border-[#333] text-lg text-yellow-500 font-semibold" value={formData.precioVehiculo} onChange={e => setFormData({...formData, precioVehiculo: e.target.value})} />
+                    </div>
+                    
+                    <div className="space-y-2 col-span-2 mt-4">
+                      <label className="text-sm font-medium text-zinc-300">String Forma de Pago (Editable)</label>
+                      <Input required className="bg-[#111] border-[#333]" value={formData.formaPago} onChange={e => setFormData({...formData, formaPago: e.target.value})} />
+                    </div>
+                  </div>
                 </div>
 
-                {/* CREDITO */}
-                <div className="flex flex-col space-y-3 pt-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="chk-credito" checked={formData.hasCredito} onCheckedChange={(c) => setFormData({...formData, hasCredito: !!c})} className="border-zinc-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:text-black" />
-                    <Label htmlFor="chk-credito" className="text-zinc-300 cursor-pointer">Crédito</Label>
-                  </div>
-                  {formData.hasCredito && (
-                    <div className="pl-6 grid grid-cols-2 gap-4">
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <Label className="text-xs text-zinc-500">Monto del Crédito</Label>
-                        <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.credito} onChange={e => setFormData({...formData, credito: e.target.value})} />
+                {/* COLUMNA DERECHA: Formas de Pago y Resumen */}
+                <div className="space-y-6">
+                  <div className="space-y-4 border border-[#333] p-4 rounded-lg bg-[#111]/50">
+                    <h3 className="text-sm font-medium text-zinc-300 mb-2">Composición del Pago</h3>
+                    
+                    {/* EFECTIVO */}
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="chk-efectivo" checked={formData.hasEfectivo} onCheckedChange={(c) => setFormData({...formData, hasEfectivo: !!c})} className="border-zinc-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:text-black" />
+                        <Label htmlFor="chk-efectivo" className="text-zinc-300 cursor-pointer">Efectivo</Label>
                       </div>
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <Label className="text-xs text-zinc-500">% Quebranto</Label>
-                        <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="10" value={formData.porcentajeQuebranto} onChange={e => setFormData({...formData, porcentajeQuebranto: e.target.value})} />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label className="text-xs text-zinc-500">Costo de Quebranto Calculado (+21% IVA)</Label>
-                        <Input readOnly type="number" className="bg-[#222] border-[#444] text-zinc-400" value={formData.quebranto} />
-                      </div>
+                      {formData.hasEfectivo && (
+                        <div className="pl-6 space-y-2">
+                          <Label className="text-xs text-zinc-500">Monto en Efectivo</Label>
+                          <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.efectivo} onChange={e => setFormData({...formData, efectivo: e.target.value})} />
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* CREDITO */}
+                    <div className="flex flex-col space-y-3 pt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="chk-credito" checked={formData.hasCredito} onCheckedChange={(c) => setFormData({...formData, hasCredito: !!c})} className="border-zinc-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:text-black" />
+                        <Label htmlFor="chk-credito" className="text-zinc-300 cursor-pointer">Crédito</Label>
+                      </div>
+                      {formData.hasCredito && (
+                        <div className="pl-6 grid grid-cols-2 gap-4">
+                          <div className="space-y-2 col-span-2 md:col-span-1">
+                            <Label className="text-xs text-zinc-500">Monto del Crédito</Label>
+                            <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.credito} onChange={e => setFormData({...formData, credito: e.target.value})} />
+                          </div>
+                          <div className="space-y-2 col-span-2 md:col-span-1">
+                            <Label className="text-xs text-zinc-500">% Quebranto</Label>
+                            <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="10" value={formData.porcentajeQuebranto} onChange={e => setFormData({...formData, porcentajeQuebranto: e.target.value})} />
+                          </div>
+                          <div className="space-y-2 col-span-2">
+                            <Label className="text-xs text-zinc-500">Costo de Quebranto Calculado (+21% IVA)</Label>
+                            <Input readOnly type="number" className="bg-[#222] border-[#444] text-zinc-400" value={formData.quebranto} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* AUTO PARTE DE PAGO */}
+                    <div className="flex flex-col space-y-3 pt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="chk-auto" checked={formData.hasAuto} onCheckedChange={(c) => setFormData({...formData, hasAuto: !!c})} className="border-zinc-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:text-black" />
+                        <Label htmlFor="chk-auto" className="text-zinc-300 cursor-pointer">Auto en Parte de Pago</Label>
+                      </div>
+                      {formData.hasAuto && (
+                        <div className="pl-6 grid grid-cols-2 gap-4">
+                          <div className="space-y-2 col-span-2 md:col-span-1">
+                            <Label className="text-xs text-zinc-500">Valor Reconocido</Label>
+                            <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.autoPartePago} onChange={e => setFormData({...formData, autoPartePago: e.target.value})} />
+                          </div>
+                          <div className="space-y-2 col-span-2 md:col-span-1">
+                            <Label className="text-xs text-zinc-500">Detalles</Label>
+                            <Input className="bg-[#0a0a0a] border-[#333]" placeholder="Ej: VW Gol Trend" value={formData.detalleAutoPartePago} onChange={e => setFormData({...formData, detalleAutoPartePago: e.target.value})} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Resumen */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Total a Pagar</label>
+                      <Input required type="number" className="bg-[#111] border-[#333] text-lg" value={formData.total} onChange={e => setFormData({...formData, total: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Saldo Pendiente</label>
+                      <Input required type="number" className="bg-[#111] border-[#333] text-lg text-red-400" value={formData.saldoPendiente} onChange={e => setFormData({...formData, saldoPendiente: e.target.value})} />
+                    </div>
+                  </div>
                 </div>
 
-                {/* AUTO PARTE DE PAGO */}
-                <div className="flex flex-col space-y-3 pt-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="chk-auto" checked={formData.hasAuto} onCheckedChange={(c) => setFormData({...formData, hasAuto: !!c})} className="border-zinc-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:text-black" />
-                    <Label htmlFor="chk-auto" className="text-zinc-300 cursor-pointer">Auto en Parte de Pago</Label>
-                  </div>
-                  {formData.hasAuto && (
-                    <div className="pl-6 grid grid-cols-2 gap-4">
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <Label className="text-xs text-zinc-500">Valor Reconocido</Label>
-                        <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.autoPartePago} onChange={e => setFormData({...formData, autoPartePago: e.target.value})} />
-                      </div>
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <Label className="text-xs text-zinc-500">Detalles (Marca/Modelo/Patente)</Label>
-                        <Input className="bg-[#0a0a0a] border-[#333]" placeholder="Ej: VW Gol Trend AB123CD" value={formData.detalleAutoPartePago} onChange={e => setFormData({...formData, detalleAutoPartePago: e.target.value})} />
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
-
-              {/* Resumen */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <label className="text-sm font-medium text-zinc-300">String Forma de Pago (Editable)</label>
-                  <Input required className="bg-[#111] border-[#333]" value={formData.formaPago} onChange={e => setFormData({...formData, formaPago: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Total a Pagar</label>
-                  <Input required type="number" className="bg-[#111] border-[#333] text-lg" value={formData.total} onChange={e => setFormData({...formData, total: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Saldo Pendiente</label>
-                  <Input required type="number" className="bg-[#111] border-[#333] text-lg text-red-400" value={formData.saldoPendiente} onChange={e => setFormData({...formData, saldoPendiente: e.target.value})} />
-                </div>
-              </div>
-
-              <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6 py-6 text-lg font-bold">
+              <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-8 py-6 text-lg font-bold">
                 {loading ? "Procesando..." : (editingId ? "Actualizar Venta" : "Confirmar Venta")}
               </Button>
             </form>
