@@ -10,6 +10,7 @@ export async function GET() {
         name: true,
         username: true,
         role: true,
+        phone: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
         username: body.username,
         password: hashedPassword,
         role: body.role || "SELLER",
+        phone: body.phone || null,
       },
     });
     return NextResponse.json(user);

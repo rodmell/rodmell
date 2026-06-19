@@ -26,6 +26,14 @@ export async function POST(req: Request) {
         vendedorId: body.vendedorId,
         precioVehiculo: parseFloat(body.precioVehiculo),
         formaPago: body.formaPago,
+        
+        efectivo: body.efectivo !== null ? parseFloat(body.efectivo) : null,
+        credito: body.credito !== null ? parseFloat(body.credito) : null,
+        porcentajeQuebranto: body.porcentajeQuebranto !== null ? parseFloat(body.porcentajeQuebranto) : null,
+        quebranto: body.quebranto !== null ? parseFloat(body.quebranto) : null,
+        autoPartePago: body.autoPartePago !== null ? parseFloat(body.autoPartePago) : null,
+        detalleAutoPartePago: body.detalleAutoPartePago || null,
+        
         total: parseFloat(body.total),
         saldoPendiente: parseFloat(body.saldoPendiente),
       },

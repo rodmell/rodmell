@@ -33,6 +33,7 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
     username: "",
     password: "",
     role: "SELLER",
+    phone: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +47,7 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
       });
       if (res.ok) {
         setOpen(false);
-        setFormData({ name: "", username: "", password: "", role: "SELLER" });
+        setFormData({ name: "", username: "", password: "", role: "SELLER", phone: "" });
         router.refresh();
       }
     } catch (error) {
@@ -91,6 +92,10 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
                     <Input required className="bg-[#111] border-[#333]" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
                   </div>
                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-zinc-300">Teléfono</label>
+                    <Input className="bg-[#111] border-[#333]" placeholder="Ej: +54 9 11 1234-5678" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-sm font-medium text-zinc-300">Contraseña</label>
                     <Input required type="password" className="bg-[#111] border-[#333]" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                   </div>
@@ -124,7 +129,7 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
                   <TableRow key={u.id} className="border-[#222] hover:bg-[#111]">
                     <TableCell className="font-medium text-white">
                       <div>{u.name}</div>
-                      <div className="text-xs text-zinc-500">@{u.username}</div>
+                      <div className="text-xs text-zinc-500">@{u.username} {u.phone ? `- ${u.phone}` : ""}</div>
                     </TableCell>
                     <TableCell className="text-zinc-300">
                       <span className="bg-[#111] border border-[#333] px-2 py-1 rounded text-xs text-zinc-300">

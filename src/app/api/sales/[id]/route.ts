@@ -18,9 +18,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id: _, createdAt, updatedAt, cliente, vehiculo, ...updateData } = body;
 
     // Convert strings to floats where necessary
-    if (updateData.precioVehiculo) updateData.precioVehiculo = parseFloat(updateData.precioVehiculo);
-    if (updateData.total) updateData.total = parseFloat(updateData.total);
-    if (updateData.saldoPendiente) updateData.saldoPendiente = parseFloat(updateData.saldoPendiente);
+    if (updateData.precioVehiculo !== undefined) updateData.precioVehiculo = parseFloat(updateData.precioVehiculo);
+    if (updateData.total !== undefined) updateData.total = parseFloat(updateData.total);
+    if (updateData.saldoPendiente !== undefined) updateData.saldoPendiente = parseFloat(updateData.saldoPendiente);
+    
+    if (updateData.efectivo !== undefined && updateData.efectivo !== null) updateData.efectivo = parseFloat(updateData.efectivo);
+    if (updateData.credito !== undefined && updateData.credito !== null) updateData.credito = parseFloat(updateData.credito);
+    if (updateData.porcentajeQuebranto !== undefined && updateData.porcentajeQuebranto !== null) updateData.porcentajeQuebranto = parseFloat(updateData.porcentajeQuebranto);
+    if (updateData.quebranto !== undefined && updateData.quebranto !== null) updateData.quebranto = parseFloat(updateData.quebranto);
+    if (updateData.autoPartePago !== undefined && updateData.autoPartePago !== null) updateData.autoPartePago = parseFloat(updateData.autoPartePago);
 
     const sale = await prisma.operacion.update({
       where: { id },

@@ -64,6 +64,7 @@ model User {
   username      String      @unique
   password      String
   role          Role        @default(SELLER)
+  phone         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   operaciones   Operacion[]
@@ -120,7 +121,11 @@ model Operacion {
   vendedorId        String
   precioVehiculo    Float
   formaPago         String?
+  efectivo          Float?
   credito           Float?
+  autoPartePago     Float?
+  detalleAutoPartePago String?
+  porcentajeQuebranto Float?
   gastosInscripcion Float?
   gastosPrenda      Float?
   accesorios        Float?
