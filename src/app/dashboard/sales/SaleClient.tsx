@@ -3,7 +3,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeDollarSign, Plus, Search, Trash2, Edit, Wallet, FileText } from "lucide-react";
+import { 
+  Plus, 
+  Search, 
+  Trash2, 
+  FileText, 
+  ChevronDown,
+  BadgeDollarSign, 
+  Edit,
+  Wallet
+} from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -38,14 +47,19 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
 
   return (
     <div className="relative">
-      <Input 
-        className="w-full bg-[#111] border-[#333]" 
-        placeholder={placeholder} 
-        value={search} 
-        onChange={e => { setSearch(e.target.value); setOpen(true); onChange(""); }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 200)}
-      />
+      <div className="relative flex items-center">
+        <Input 
+          className="w-full bg-[#111] border-[#333] pr-10" 
+          placeholder={placeholder} 
+          value={search} 
+          onChange={e => { setSearch(e.target.value); setOpen(true); onChange(""); }}
+          onClick={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 200)}
+        />
+        <ChevronDown 
+          className="absolute right-3 w-4 h-4 text-zinc-500 cursor-pointer pointer-events-none" 
+        />
+      </div>
       {open && (
         <ul className="absolute z-50 w-full mt-1 max-h-60 overflow-auto bg-[#1a1a1a] border border-[#333] rounded-sm shadow-xl">
           {options.filter((o:any) => o.label.toLowerCase().includes(search.toLowerCase())).map((o:any) => (
@@ -256,7 +270,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
           <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Nueva Operación
           </DialogTrigger>
-          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white max-w-4xl max-h-[90vh] overflow-y-auto rounded-none">
+          <DialogContent className="bg-[#0a0a0a] border-[#222] text-white max-w-6xl max-h-[90vh] overflow-y-auto rounded-none shadow-2xl">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Venta" : "Registrar Venta"}</DialogTitle>
               <DialogDescription className="text-zinc-400">

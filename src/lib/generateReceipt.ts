@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import QRCode from "qrcode";
+
 
 export const generateReceiptPDF = async (sale: any) => {
   // Inicializamos el documento A4
@@ -22,32 +22,57 @@ export const generateReceiptPDF = async (sale: any) => {
     doc.text(text, x, y);
   };
 
-  // --- MARCA DE AGUA INSTITUCIONAL ---
-  doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
-  doc.setFontSize(80);
-  doc.setTextColor("#000000");
-  doc.setFont("helvetica", "bold");
-  // Rotated watermark
-  doc.text("RODMELL", pageWidth / 2, pageHeight / 2, { angle: 45, align: "center" });
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  // Helper para cargar imagen
+  const loadImage = async (url: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(""); // Resolve empty string on error to avoid breaking PDF
+      img.src = url;
+    });
+  };
 
-  // --- SELLO "PAGADO" DIAGONAL (si el saldo es 0 o cercano) ---
+  const logoBase64 = await loadImage("/logo.png");
+  const faviconBase64 = await loadImage("/favicon.png");
+
+  // --- MARCA DE AGUA INSTITUCIONAL ---
+  if (faviconBase64) {
+    doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+    // Centered and large (120x120 mm)
+    const watermarkSize = 120;
+    doc.addImage(faviconBase64, "PNG", (pageWidth - watermarkSize) / 2, (pageHeight - watermarkSize) / 2, watermarkSize, watermarkSize);
+    doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  }
+
+  // --- SELLO "PAGADO" DIAGONAL ---
   if (sale.saldoPendiente <= 0) {
     doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
     doc.setFontSize(100);
-    doc.setTextColor("#16a34a"); // Verde
+    doc.setTextColor("#ef4444"); // Rojo
     doc.setFont("helvetica", "bolditalic");
     doc.text("PAGADO", pageWidth / 2, pageHeight / 2 + 20, { angle: 30, align: "center" });
     doc.setGState(new (doc as any).GState({ opacity: 1 }));
   }
 
   // --- ENCABEZADO ---
-  // Un rectangulo superior oscuro para dar aspecto premium
   doc.setFillColor(15, 15, 15);
   doc.rect(0, 0, pageWidth, 35, "F");
 
-  writeText("RODMELL AUTOS", 15, 15, 20, "helvetica", "bold", "#eab308"); // Amarillo
-  writeText("Concesionaria Oficial", 15, 22, 10, "helvetica", "normal", "#ffffff");
+  if (logoBase64) {
+    // Top left logo
+    doc.addImage(logoBase64, "PNG", 15, 5, 45, 25);
+  } else {
+    writeText("RODMELL AUTOS", 15, 15, 20, "helvetica", "bold", "#eab308");
+    writeText("Concesionaria Oficial", 15, 22, 10, "helvetica", "normal", "#ffffff");
+  }
   
   writeText("Av. Libertador 1234, CABA", pageWidth - 15, 12, 9, "helvetica", "normal", "#ffffff");
   doc.text("Tel: +54 9 11 1234-5678", pageWidth - 15, 17, { align: "right" });
@@ -165,7 +190,6 @@ export const generateReceiptPDF = async (sale: any) => {
   
   // Cliente
   doc.line(20, sigY, 70, sigY);
-  writeText("Firma del Cliente", 45, sigY + 5, 8, "helvetica", "normal", "#555");
   doc.text("Firma del Cliente", 45, sigY + 5, { align: "center" });
   doc.text(`Aclaración: ${sale.cliente?.nombreCompleto || ""}`, 45, sigY + 10, { align: "center" });
   doc.text(`DNI: ${sale.cliente?.dni || ""}`, 45, sigY + 15, { align: "center" });
@@ -180,20 +204,12 @@ export const generateReceiptPDF = async (sale: any) => {
   doc.text("Firma Autorizada", 165, sigY + 5, { align: "center" });
   doc.text("RODMELL AUTOS", 165, sigY + 10, { align: "center" });
 
-  // --- QR Y FOOTER ---
-  try {
-    const qrData = `Comprobante ${sale.id} | Cliente: ${sale.cliente?.dni} | Fecha: ${new Date().toISOString()}`;
-    const qrImage = await QRCode.toDataURL(qrData);
-    doc.addImage(qrImage, "PNG", 15, pageHeight - 30, 20, 20);
-  } catch (err) {
-    console.error("QR Generation error", err);
-  }
-
+  // --- FOOTER ---
   doc.setFontSize(7);
   doc.setTextColor("#777777");
   const legalText = "Este comprobante acredita la recepción del pago detallado en el presente documento y constituye constancia válida de la operación registrada por la concesionaria. El documento pierde validez en caso de alteraciones o enmiendas.";
-  const splitText = doc.splitTextToSize(legalText, pageWidth - 60);
-  doc.text(splitText, 40, pageHeight - 25);
+  const splitText = doc.splitTextToSize(legalText, pageWidth - 30);
+  doc.text(splitText, 15, pageHeight - 15);
 
   // Descargar PDF
   doc.save(`Comprobante_${sale.id}.pdf`);
