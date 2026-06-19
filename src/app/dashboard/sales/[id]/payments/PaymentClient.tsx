@@ -517,6 +517,13 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-300">Comprobante del cliente (Opcional)</label>
+              {selectedCuota?.comprobanteUrl && (
+                <div className="mb-2">
+                  <a href={selectedCuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-400 hover:underline">
+                    Ver comprobante actual adjunto
+                  </a>
+                </div>
+              )}
               <Input type="file" className="bg-[#111] border-[#333] text-zinc-400" onChange={e => setCuotaPayData({...cuotaPayData, file: e.target.files?.[0] || null})} />
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 text-white mt-6">
@@ -547,6 +554,13 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-300">Archivo Adjunto (Opcional - Reemplazar)</label>
+              {selectedPago?.comprobanteUrl && (
+                <div className="mb-2">
+                  <a href={selectedPago.comprobanteUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-400 hover:underline">
+                    Ver comprobante actual adjunto
+                  </a>
+                </div>
+              )}
               <Input type="file" className="bg-[#111] border-[#333] text-zinc-400" onChange={e => setEditPagoData({...editPagoData, file: e.target.files?.[0] || null})} />
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">

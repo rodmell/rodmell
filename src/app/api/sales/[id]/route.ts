@@ -67,6 +67,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       include: { vehiculo: true, cliente: true }
     });
 
+    // Revert vehicle status to DISPONIBLE
+    if (sale.vehiculoId) {
+      await prisma.vehiculo.update({
+        where: { id: sale.vehiculoId },
+        data: { estado: "DISPONIBLE" }
+      });
+    }
+
     await prisma.activityLog.create({
       data: {
         userId: (session.user as any).id,
