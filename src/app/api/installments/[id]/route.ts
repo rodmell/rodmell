@@ -22,20 +22,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       dataToUpdate.medioPago = medioPago || "EFECTIVO";
       dataToUpdate.fechaPago = new Date();
       dataToUpdate.comprobanteUrl = comprobanteUrl || null;
-      // Only generate if not already generated
       const existing = await prisma.cuota.findUnique({ where: { id } });
       if (!existing?.comprobante) {
         dataToUpdate.comprobante = "CT-" + Math.random().toString(36).substring(2, 8).toUpperCase();
       }
     }
 
+    // If it's marked as PAGADA, we should decrement the saldoPendiente from Operacion
+    // ONLY if it wasn't already PAGADA.
+    const existingBefore = await prisma.cuota.findUnique({ where: { id } });
+    
     const cuota = await prisma.cuota.update({
       where: { id },
       data: dataToUpdate
     });
 
-    // If it's marked as PAGADA, we should decrement the saldoPendiente from Operacion
-    if (estado === "PAGADA") {
+    if (estado === "PAGADA" && existingBefore?.estado !== "PAGADA") {
       await prisma.operacion.update({
         where: { id: cuota.operacionId },
         data: {

@@ -57,6 +57,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
+    // Delete related pagos and cuotas first to avoid foreign key constraints
+    await prisma.pago.deleteMany({ where: { operacionId: id } });
+    await prisma.cuota.deleteMany({ where: { operacionId: id } });
+
     // Delete sale
     const sale = await prisma.operacion.delete({
       where: { id },

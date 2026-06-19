@@ -7,6 +7,8 @@ export async function GET() {
       include: {
         cliente: true,
         vehiculo: true,
+        pagos: true,
+        cuotas: true,
       },
       orderBy: { createdAt: "desc" },
     });

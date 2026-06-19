@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText } from "lucide-react";
+import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText, Edit, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +30,12 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
   const [openCuotaPay, setOpenCuotaPay] = useState(false);
   const [selectedCuota, setSelectedCuota] = useState<any>(null);
   const [cuotaPayData, setCuotaPayData] = useState({ medioPago: "EFECTIVO", file: null as File | null });
+
+  // New States for Search and Edit
+  const [searchTerm, setSearchTerm] = useState("");
+  const [openEditPago, setOpenEditPago] = useState(false);
+  const [selectedPago, setSelectedPago] = useState<any>(null);
+  const [editPagoData, setEditPagoData] = useState({ medioPago: "", observaciones: "", file: null as File | null });
 
   const handleAddPago = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +173,46 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
     generateReceiptPDF(sale, "CUOTA", cuota);
   };
 
+  const handleUpdatePago = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPago) return;
+    setLoading(true);
+    try {
+      let comprobanteUrl = selectedPago.comprobanteUrl;
+      if (editPagoData.file) {
+        const formData = new FormData();
+        formData.append("file", editPagoData.file);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const blob = await uploadRes.json();
+          comprobanteUrl = blob.url;
+        }
+      }
+
+      const res = await fetch(`/api/payments/${selectedPago.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          medioPago: editPagoData.medioPago,
+          observaciones: editPagoData.observaciones,
+          comprobanteUrl,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Pago actualizado");
+        setOpenEditPago(false);
+        setSelectedPago(null);
+        router.refresh();
+      } else {
+        toast.error("Error al actualizar pago");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -208,6 +254,17 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
           <p className="text-zinc-400 font-medium mb-1">Saldo Pendiente</p>
           <p className="text-3xl font-bold text-red-500">${sale.saldoPendiente.toLocaleString()}</p>
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-[#0a0a0a] border border-[#222] rounded-lg p-4 flex items-center gap-4">
+        <Search className="w-5 h-5 text-zinc-500" />
+        <Input 
+          placeholder="Buscar por Nº de Comprobante o Medio de Pago..." 
+          className="bg-[#111] border-[#333] text-white flex-1"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -258,11 +315,15 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
           </div>
           
           <div className="p-0 flex-1">
-            {sale.pagos.length === 0 ? (
+            {sale.pagos.filter((p: any) => 
+              `${p.comprobante || p.id.slice(-6).toUpperCase()} ${p.medioPago} ${p.observaciones || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
               <div className="p-8 text-center text-zinc-500">No hay pagos iniciales registrados.</div>
             ) : (
               <div className="divide-y divide-[#222]">
-                {sale.pagos.map((pago: any) => (
+                {sale.pagos.filter((p: any) => 
+                  `${p.comprobante || p.id.slice(-6).toUpperCase()} ${p.medioPago} ${p.observaciones || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
+                ).map((pago: any) => (
                   <div key={pago.id} className="p-4 flex items-center justify-between hover:bg-[#111] transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
@@ -281,6 +342,13 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-white font-bold">${pago.importe.toLocaleString()}</span>
+                      <button onClick={() => {
+                        setSelectedPago(pago);
+                        setEditPagoData({ medioPago: pago.medioPago, observaciones: pago.observaciones || "", file: null });
+                        setOpenEditPago(true);
+                      }} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar Pago">
+                        <Edit className="w-4 h-4" />
+                      </button>
                       <button onClick={() => handleDownloadPagoReceipt(pago)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
                         <FileText className="w-4 h-4" />
                       </button>
@@ -332,11 +400,15 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
           </div>
 
           <div className="p-0 flex-1">
-            {sale.cuotas.length === 0 ? (
+            {sale.cuotas.filter((c: any) => 
+              `${c.comprobante || c.id.slice(-6).toUpperCase()} ${c.estado}`.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
               <div className="p-8 text-center text-zinc-500">No hay plan de cuotas generado.</div>
             ) : (
               <div className="divide-y divide-[#222]">
-                {sale.cuotas.map((cuota: any) => (
+                {sale.cuotas.filter((c: any) => 
+                  `${c.comprobante || c.id.slice(-6).toUpperCase()} ${c.estado}`.toLowerCase().includes(searchTerm.toLowerCase())
+                ).map((cuota: any) => (
                   <div key={cuota.id} className="p-4 flex items-center justify-between hover:bg-[#111] transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-lg bg-[#222] border border-[#333] flex flex-col items-center justify-center">
@@ -373,9 +445,18 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                       </button>
                       
                       {cuota.estado === "PAGADA" && (
-                        <button onClick={() => handleDownloadCuotaReceipt(cuota)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
-                          <FileText className="w-4 h-4" />
-                        </button>
+                        <>
+                          <button onClick={() => {
+                            setSelectedCuota(cuota);
+                            setCuotaPayData({ medioPago: cuota.medioPago || "EFECTIVO", file: null });
+                            setOpenCuotaPay(true);
+                          }} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar Cuota">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDownloadCuotaReceipt(cuota)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -408,6 +489,36 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 text-white mt-6">
               {loading ? "Guardando..." : "Confirmar Pago"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openEditPago} onOpenChange={setOpenEditPago}>
+        <DialogContent className="bg-[#0a0a0a] border-[#222] text-white">
+          <DialogHeader>
+            <DialogTitle>Editar Pago / Entrega</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdatePago} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Medio de Pago</label>
+              <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={editPagoData.medioPago} onChange={e => setEditPagoData({...editPagoData, medioPago: e.target.value})}>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="SENA">Seña</option>
+                <option value="TARJETA">Tarjeta</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Observaciones</label>
+              <Input className="bg-[#111] border-[#333]" value={editPagoData.observaciones} onChange={e => setEditPagoData({...editPagoData, observaciones: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Archivo Adjunto (Opcional - Reemplazar)</label>
+              <Input type="file" className="bg-[#111] border-[#333] text-zinc-400" onChange={e => setEditPagoData({...editPagoData, file: e.target.files?.[0] || null})} />
+            </div>
+            <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
+              {loading ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </form>
         </DialogContent>

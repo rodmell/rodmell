@@ -440,18 +440,26 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sales.filter(s => 
-              `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
-            ).length === 0 ? (
+            {sales.filter(s => {
+              const innerIds = [
+                ...(s.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()) || []),
+                ...(s.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase()) || [])
+              ].join(" ");
+              return `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || s.id.slice(-6).toUpperCase()} ${innerIds}`.toLowerCase().includes(searchTerm.toLowerCase());
+            }).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
                 <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
                   No hay ventas registradas
                 </TableCell>
               </TableRow>
             ) : (
-              sales.filter(s => 
-                `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || ""}`.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map((s) => (
+              sales.filter(s => {
+                const innerIds = [
+                  ...(s.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()) || []),
+                  ...(s.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase()) || [])
+                ].join(" ");
+                return `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || s.id.slice(-6).toUpperCase()} ${innerIds}`.toLowerCase().includes(searchTerm.toLowerCase());
+              }).map((s) => (
                 <TableRow key={s.id} className="border-[#222] hover:bg-[#111]">
                   <TableCell className="text-zinc-300">{new Date(s.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>
