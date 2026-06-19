@@ -275,9 +275,7 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                           {pago.comprobanteUrl && (
                             <a href={pago.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">Ver adjunto</a>
                           )}
-                          {pago.comprobante && (
-                            <span className="text-xs text-yellow-500 font-mono">Nº {pago.comprobante}</span>
-                          )}
+                          <span className="text-xs text-yellow-500 font-mono">Nº {pago.comprobante || pago.id.slice(-6).toUpperCase()}</span>
                         </div>
                       </div>
                     </div>
@@ -353,9 +351,7 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                             {cuota.comprobanteUrl && (
                               <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">Ver adjunto</a>
                             )}
-                            {cuota.comprobante && (
-                              <span className="text-xs text-yellow-500 font-mono">Nº {cuota.comprobante}</span>
-                            )}
+                            <span className="text-xs text-yellow-500 font-mono">Nº {cuota.comprobante || cuota.id.slice(-6).toUpperCase()}</span>
                           </div>
                         )}
                       </div>

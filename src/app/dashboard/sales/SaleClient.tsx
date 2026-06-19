@@ -28,7 +28,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,6 +158,18 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     formData.hasAuto, formData.autoPartePago
   ]);
 
+  const handleNew = () => {
+    setEditingId(null);
+    setFormData({
+      clienteId: "", vehiculoId: "", precioVehiculo: "", 
+      hasEfectivo: false, efectivo: "",
+      hasCredito: false, credito: "", porcentajeQuebranto: "", quebranto: "0",
+      hasAuto: false, autoPartePago: "", detalleAutoPartePago: "",
+      formaPago: "", total: "", saldoPendiente: "0", observaciones: ""
+    });
+    setOpen(true);
+  };
+
   const handleEdit = (s: any) => {
     setEditingId(s.id);
     setFormData({
@@ -267,9 +278,9 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+          <Button onClick={handleNew} className="inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Nueva Operación
-          </DialogTrigger>
+          </Button>
           <DialogContent className="bg-[#0a0a0a] border-[#222] text-white sm:max-w-3xl md:max-w-5xl max-h-[90vh] overflow-y-auto rounded-none shadow-2xl">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Venta" : "Registrar Venta"}</DialogTitle>
@@ -446,7 +457,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                   <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>
                   <TableCell className="text-zinc-300">{s.vehiculo?.marca} {s.vehiculo?.modelo}</TableCell>
                   <TableCell className="text-zinc-300">{s.formaPago}</TableCell>
-                  <TableCell className="text-yellow-500 font-mono text-xs">{s.comprobante || "-"}</TableCell>
+                  <TableCell className="text-yellow-500 font-mono text-xs">{s.comprobante || s.id.slice(-6).toUpperCase()}</TableCell>
                   <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">

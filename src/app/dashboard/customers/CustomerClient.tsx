@@ -173,9 +173,9 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
           <TableBody>
             {customers.filter(c => {
               const allComprobantes = c.operaciones?.flatMap((op: any) => [
-                op.comprobante,
-                ...op.pagos?.map((p: any) => p.comprobante),
-                ...op.cuotas?.map((cu: any) => cu.comprobante)
+                op.comprobante, op.id.slice(-6).toUpperCase(),
+                ...op.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()),
+                ...op.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase())
               ]).filter(Boolean).join(" ") || "";
               
               return `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email} ${allComprobantes}`.toLowerCase().includes(searchTerm.toLowerCase());
@@ -188,9 +188,9 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
             ) : (
               customers.filter(c => {
                 const allComprobantes = c.operaciones?.flatMap((op: any) => [
-                  op.comprobante,
-                  ...op.pagos?.map((p: any) => p.comprobante),
-                  ...op.cuotas?.map((cu: any) => cu.comprobante)
+                  op.comprobante, op.id.slice(-6).toUpperCase(),
+                  ...op.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()),
+                  ...op.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase())
                 ]).filter(Boolean).join(" ") || "";
                 
                 return `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email} ${allComprobantes}`.toLowerCase().includes(searchTerm.toLowerCase());
