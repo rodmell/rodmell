@@ -329,7 +329,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                             : [])
                         ].map(v => ({ 
                           value: v.id, 
-                          label: `${v.marca} ${v.modelo} | ${v.año || "-"} | ${v.color || "-"} | Dom: ${v.dominio || "S/D"} ($${v.precioVenta})` 
+                          label: `[${v.tipo || "AUTO"}] ${v.marca} ${v.modelo} | ${v.anio || "-"} | ${v.color || "-"} | Dom: ${v.dominio || "S/D"} ($${v.precioVenta})` 
                         }))}
                       />
                     </div>
