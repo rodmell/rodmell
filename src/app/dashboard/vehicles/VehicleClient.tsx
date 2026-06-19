@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +51,16 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+
+  const handleNew = () => {
+    setEditingId(null);
+    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "", descripcion: "" });
+    setExistingPhotos([]);
+    setPreviewUrls([]);
+    setPortadaUrl(null);
+    setFiles([]);
+    setOpen(true);
+  };
 
   const handleEdit = (v: any) => {
     setEditingId(v.id);
@@ -207,9 +216,9 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+          <Button onClick={handleNew} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-9 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Agregar Vehículo
-          </DialogTrigger>
+          </Button>
           <DialogContent className="bg-[#0a0a0a] border-[#222] text-white sm:max-w-2xl lg:max-w-3xl">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Vehículo" : "Nuevo Vehículo"}</DialogTitle>
