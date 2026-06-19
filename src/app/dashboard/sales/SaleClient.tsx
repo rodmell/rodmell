@@ -310,12 +310,27 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                         value={formData.vehiculoId}
                         onChange={(val: string) => {
                           setFormData({...formData, vehiculoId: val});
-                          const v = vehicles.find(v => v.id === val);
+                          const combinedVehicles = [...vehicles];
+                          if (editingId) {
+                            const currentSale = sales.find(s => s.id === editingId);
+                            if (currentSale?.vehiculo && !combinedVehicles.find(v => v.id === currentSale.vehiculo.id)) {
+                              combinedVehicles.push(currentSale.vehiculo);
+                            }
+                          }
+                          const v = combinedVehicles.find(v => v.id === val);
                           if (v && v.precioVenta) {
                             setFormData(prev => ({...prev, vehiculoId: val, precioVehiculo: v.precioVenta.toString()}));
                           }
                         }}
-                        options={vehicles.map(v => ({ value: v.id, label: `${v.marca} ${v.modelo} - ${v.dominio} ($${v.precioVenta})` }))}
+                        options={[
+                          ...vehicles,
+                          ...(editingId && sales.find(s => s.id === editingId)?.vehiculo && !vehicles.find(v => v.id === sales.find(s => s.id === editingId)?.vehiculo.id) 
+                            ? [sales.find(s => s.id === editingId)?.vehiculo] 
+                            : [])
+                        ].map(v => ({ 
+                          value: v.id, 
+                          label: `${v.marca} ${v.modelo} | ${v.año || "-"} | ${v.color || "-"} | Dom: ${v.dominio || "S/D"} ($${v.precioVenta})` 
+                        }))}
                       />
                     </div>
                     <div className="space-y-2 col-span-2">
