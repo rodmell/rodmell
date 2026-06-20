@@ -44,11 +44,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           saldoPendiente: { decrement: cuota.valor }
         }
       });
+      
+      await prisma.activityLog.create({
+        data: {
+          userId: (session.user as any).id,
+          action: "PAY_INSTALLMENT",
+          details: `Cobró cuota N°${cuota.numeroCuota} de $${cuota.valor} (Op: ${cuota.operacionId})`
+        }
+      });
     } else if (estado === "PENDIENTE" && existingBefore?.estado === "PAGADA") {
       await prisma.operacion.update({
         where: { id: cuota.operacionId },
         data: {
           saldoPendiente: { increment: cuota.valor }
+        }
+      });
+      
+      await prisma.activityLog.create({
+        data: {
+          userId: (session.user as any).id,
+          action: "REVERT_INSTALLMENT",
+          details: `Revirtió a PENDIENTE la cuota N°${cuota.numeroCuota} (Op: ${cuota.operacionId})`
         }
       });
     }
@@ -71,6 +87,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const cuota = await prisma.cuota.delete({
       where: { id }
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: (session.user as any).id,
+        action: "DELETE_INSTALLMENT",
+        details: `Eliminó cuota N°${cuota.numeroCuota} de $${cuota.valor}`
+      }
     });
 
     return NextResponse.json({ success: true });

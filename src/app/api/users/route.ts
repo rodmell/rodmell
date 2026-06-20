@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -23,6 +27,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const body = await req.json();
     
     const existing = await prisma.user.findUnique({
@@ -44,6 +53,15 @@ export async function POST(req: Request) {
         phone: body.phone || null,
       },
     });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: (session.user as any).id,
+        action: "CREATE_USER",
+        details: `Creó un nuevo usuario: ${user.name} (@${user.username}) con rol ${user.role}`
+      }
+    });
+
     return NextResponse.json(user);
   } catch {
     return NextResponse.json({ error: "Failed to create user" }, { status: 500 });

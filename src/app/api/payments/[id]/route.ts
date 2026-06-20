@@ -25,6 +25,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       data: dataToUpdate
     });
 
+    await prisma.activityLog.create({
+      data: {
+        userId: (session.user as any).id,
+        action: "UPDATE_PAYMENT",
+        details: `Actualizó pago de $${pago.importe} (ID: ${pago.comprobante})`
+      }
+    });
+
     return NextResponse.json(pago);
   } catch (error: any) {
     console.error("Error updating payment:", error);
@@ -55,6 +63,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       where: { id: pago.operacionId },
       data: {
         saldoPendiente: { increment: pago.importe }
+      }
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: (session.user as any).id,
+        action: "DELETE_PAYMENT",
+        details: `Eliminó pago de $${pago.importe} (ID: ${pago.comprobante})`
       }
     });
 

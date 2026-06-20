@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -14,6 +18,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const body = await req.json();
     const vehicle = await prisma.vehiculo.create({
       data: {
@@ -35,6 +44,15 @@ export async function POST(req: Request) {
         fotos: body.fotos || [],
       },
     });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: (session.user as any).id,
+        action: "CREATE_VEHICLE",
+        details: `Agregó vehículo al inventario: ${vehicle.marca} ${vehicle.modelo} (${vehicle.dominio})`
+      }
+    });
+
     return NextResponse.json(vehicle);
   } catch {
     return NextResponse.json({ error: "Failed to create vehicle" }, { status: 500 });

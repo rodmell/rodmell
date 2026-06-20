@@ -1,9 +1,9 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, UserPlus, Edit, Trash2 } from "lucide-react";
+import { Settings, UserPlus, Edit, Trash2, Filter } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -36,22 +36,51 @@ const ROLE_COLORS: Record<string, string> = {
   MANAGER: "text-green-400 border-green-500/30 bg-green-500/10",
 };
 
-export default function SettingsClient({ users, logs }: { users: any[], logs: any[] }) {
+export default function SettingsClient({ users, logs: initialLogs }: { users: any[], logs: any[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Create form
+  // User forms
   const [formData, setFormData] = useState({
     name: "", username: "", password: "", role: "SELLER", phone: "",
   });
-
-  // Edit state
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [editData, setEditData] = useState({
     name: "", username: "", password: "", role: "SELLER", phone: "",
   });
+
+  // Activity Logs Filters
+  const [logs, setLogs] = useState<any[]>(initialLogs);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [filterUserId, setFilterUserId] = useState<string>("");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLogsLoading(true);
+      try {
+        const query = new URLSearchParams();
+        if (filterUserId) query.append("userId", filterUserId);
+        if (filterStartDate) query.append("startDate", filterStartDate);
+        if (filterEndDate) query.append("endDate", filterEndDate);
+
+        const res = await fetch(`/api/activity?${query.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLogs(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch logs", error);
+      }
+      setLogsLoading(false);
+    };
+
+    fetchLogs();
+  }, [filterUserId, filterStartDate, filterEndDate]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,10 +269,55 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
         </div>
 
         {/* ACTIVITY LOGS SECTION */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-white">Registro de Actividades</h2>
-          <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
-            <div className="max-h-[500px] overflow-y-auto">
+        <div className="space-y-4 flex flex-col h-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-xl font-semibold text-white">Registro de Actividades</h2>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-[#0a0a0a] border border-[#222] rounded-lg p-4 space-y-4">
+            <div className="flex items-center gap-2 text-zinc-400 mb-2">
+              <Filter className="w-4 h-4" />
+              <span className="text-sm font-medium">Filtros</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Usuario</label>
+                <select 
+                  className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white outline-none"
+                  value={filterUserId}
+                  onChange={(e) => setFilterUserId(e.target.value)}
+                >
+                  <option value="">Todos los usuarios</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Desde</label>
+                <Input 
+                  type="date" 
+                  className="bg-[#111] border-[#333] text-sm"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Hasta</label>
+                <Input 
+                  type="date" 
+                  className="bg-[#111] border-[#333] text-sm"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Logs Table */}
+          <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden flex-1 min-h-[400px] flex flex-col">
+            <div className="flex-1 overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-[#222] hover:bg-transparent">
@@ -253,19 +327,23 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {logs.length === 0 ? (
+                  {logsLoading ? (
                     <TableRow className="border-[#222] hover:bg-transparent">
-                      <TableCell colSpan={3} className="text-center py-8 text-zinc-500">No hay registros de actividad.</TableCell>
+                      <TableCell colSpan={3} className="text-center py-8 text-zinc-500">Cargando actividades...</TableCell>
+                    </TableRow>
+                  ) : logs.length === 0 ? (
+                    <TableRow className="border-[#222] hover:bg-transparent">
+                      <TableCell colSpan={3} className="text-center py-8 text-zinc-500">No hay registros de actividad para estos filtros.</TableCell>
                     </TableRow>
                   ) : (
                     logs.map((l) => (
                       <TableRow key={l.id} className="border-[#222] hover:bg-[#111]">
                         <TableCell>
                           <div className="font-medium text-white text-sm">{l.action}</div>
-                          <div className="text-xs text-zinc-400">{l.details}</div>
+                          <div className="text-xs text-zinc-400 max-w-[250px] truncate" title={l.details}>{l.details}</div>
                         </TableCell>
-                        <TableCell className="text-zinc-300 text-sm">{l.user?.name}</TableCell>
-                        <TableCell className="text-zinc-500 text-xs">{new Date(l.createdAt).toLocaleString()}</TableCell>
+                        <TableCell className="text-zinc-300 text-sm whitespace-nowrap">{l.user?.name}</TableCell>
+                        <TableCell className="text-zinc-500 text-xs whitespace-nowrap">{new Date(l.createdAt).toLocaleString()}</TableCell>
                       </TableRow>
                     ))
                   )}
