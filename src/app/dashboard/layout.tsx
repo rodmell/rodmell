@@ -1,13 +1,37 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopNav } from "@/components/dashboard/TopNav";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardLayout({
+// Define which roles can access which routes
+const ROUTE_PERMISSIONS: Record<string, string[]> = {
+  "/dashboard":          ["ADMIN", "MANAGER"],
+  "/dashboard/vehicles": ["SELLER", "ADMIN", "MANAGER"],
+  "/dashboard/customers":["SELLER", "ADMIN", "MANAGER"],
+  "/dashboard/sales":    ["SELLER", "ADMIN", "MANAGER"],
+  "/dashboard/reports":  ["ADMIN", "MANAGER"],
+  "/dashboard/settings": ["MANAGER"],
+};
+
+function getFirstAllowedRoute(role: string): string {
+  if (role === "SELLER") return "/dashboard/vehicles";
+  if (role === "ADMIN")  return "/dashboard";
+  return "/dashboard";
+}
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user) {
+    redirect("/login");
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-black text-white">
       {/* Sidebar Desktop */}
@@ -26,3 +50,6 @@ export default function DashboardLayout({
     </div>
   );
 }
+
+// Export for use in individual pages that need route-level protection
+export { ROUTE_PERMISSIONS, getFirstAllowedRoute };

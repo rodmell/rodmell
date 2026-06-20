@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   Car,
@@ -13,17 +14,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const sidebarLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Vehículos", href: "/dashboard/vehicles", icon: Car },
-  { name: "Clientes", href: "/dashboard/customers", icon: Users },
-  { name: "Ventas", href: "/dashboard/sales", icon: BadgeDollarSign },
-  { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
-  { name: "Configuración", href: "/dashboard/settings", icon: Settings },
+const allLinks = [
+  { name: "Dashboard",     href: "/dashboard",          icon: LayoutDashboard, roles: ["ADMIN", "MANAGER"] },
+  { name: "Vehículos",     href: "/dashboard/vehicles", icon: Car,             roles: ["SELLER", "ADMIN", "MANAGER"] },
+  { name: "Clientes",      href: "/dashboard/customers",icon: Users,           roles: ["SELLER", "ADMIN", "MANAGER"] },
+  { name: "Ventas",        href: "/dashboard/sales",    icon: BadgeDollarSign, roles: ["SELLER", "ADMIN", "MANAGER"] },
+  { name: "Reportes",      href: "/dashboard/reports",  icon: BarChart3,       roles: ["ADMIN", "MANAGER"] },
+  { name: "Configuración", href: "/dashboard/settings", icon: Settings,        roles: ["MANAGER"] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const userRole = (session?.user as { role?: string })?.role || "";
+
+  const sidebarLinks = allLinks.filter((link) => link.roles.includes(userRole));
 
   return (
     <div className="flex h-full w-64 flex-col bg-black border-r border-[#222]">
@@ -32,7 +37,7 @@ export function Sidebar() {
       </div>
       <nav className="flex-1 space-y-1 px-4 py-4">
         {sidebarLinks.map((link) => {
-          const isActive = pathname === link.href;
+          const isActive = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href));
           return (
             <Link
               key={link.name}

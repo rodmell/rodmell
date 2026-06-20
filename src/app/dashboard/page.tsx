@@ -1,11 +1,18 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import { Car, Users, DollarSign, Activity, TrendingUp, Clock } from "lucide-react";
 import Image from "next/image";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
+  const role = (session?.user as { role?: string })?.role;
+
+  // SELLER can't access dashboard home – send to vehicles
+  if (role === "SELLER") {
+    redirect("/dashboard/vehicles");
+  }
 
   // Fetch real data
   const vehiclesCount = await prisma.vehiculo.count({ where: { estado: "DISPONIBLE" } });

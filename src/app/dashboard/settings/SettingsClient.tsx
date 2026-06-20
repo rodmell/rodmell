@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, UserPlus } from "lucide-react";
+import { Settings, UserPlus, Edit, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,18 +22,35 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+const ROLE_LABELS: Record<string, string> = {
+  SELLER: "Vendedor",
+  ADMIN: "Administrador",
+  MANAGER: "Gerente",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  SELLER: "text-blue-400 border-blue-500/30 bg-blue-500/10",
+  ADMIN: "text-yellow-400 border-yellow-500/30 bg-yellow-500/10",
+  MANAGER: "text-green-400 border-green-500/30 bg-green-500/10",
+};
 
 export default function SettingsClient({ users, logs }: { users: any[], logs: any[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Create form
   const [formData, setFormData] = useState({
-    name: "",
-    username: "",
-    password: "",
-    role: "SELLER",
-    phone: "",
+    name: "", username: "", password: "", role: "SELLER", phone: "",
+  });
+
+  // Edit state
+  const [openEdit, setOpenEdit] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [editData, setEditData] = useState({
+    name: "", username: "", password: "", role: "SELLER", phone: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,13 +65,102 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
       if (res.ok) {
         setOpen(false);
         setFormData({ name: "", username: "", password: "", role: "SELLER", phone: "" });
+        toast.success("Usuario creado correctamente");
         router.refresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Error al crear el usuario");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      toast.error("Error de conexión");
     }
     setLoading(false);
   };
+
+  const handleEdit = (u: any) => {
+    setSelectedUser(u);
+    setEditData({ name: u.name, username: u.username, password: "", role: u.role, phone: u.phone || "" });
+    setOpenEdit(true);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      if (res.ok) {
+        setOpenEdit(false);
+        setSelectedUser(null);
+        toast.success("Usuario actualizado");
+        router.refresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Error al actualizar el usuario");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    if (!confirm(`¿Estás seguro de eliminar al usuario "${u.name}" (@${u.username})? Esta acción no se puede deshacer.`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Usuario eliminado");
+        router.refresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Error al eliminar el usuario");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
+  const UserForm = ({ data, setData, onSubmit, submitLabel }: any) => (
+    <form onSubmit={onSubmit} className="space-y-4 mt-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2 col-span-2">
+          <label className="text-sm font-medium text-zinc-300">Nombre Completo</label>
+          <Input required className="bg-[#111] border-[#333]" value={data.name} onChange={e => setData({ ...data, name: e.target.value })} />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-zinc-300">Usuario (Login)</label>
+          <Input required className="bg-[#111] border-[#333]" value={data.username} onChange={e => setData({ ...data, username: e.target.value })} />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-zinc-300">Teléfono</label>
+          <Input className="bg-[#111] border-[#333]" placeholder="+54 9 11..." value={data.phone} onChange={e => setData({ ...data, phone: e.target.value })} />
+        </div>
+        <div className="space-y-2 col-span-2">
+          <label className="text-sm font-medium text-zinc-300">
+            Contraseña {submitLabel === "Guardar Cambios" && <span className="text-zinc-500">(dejar vacío para no cambiar)</span>}
+          </label>
+          <Input type="password" required={submitLabel !== "Guardar Cambios"} className="bg-[#111] border-[#333]" value={data.password} onChange={e => setData({ ...data, password: e.target.value })} />
+        </div>
+        <div className="space-y-2 col-span-2">
+          <label className="text-sm font-medium text-zinc-300">Rol</label>
+          <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white outline-none" value={data.role} onChange={e => setData({ ...data, role: e.target.value })}>
+            <option value="SELLER" className="bg-[#111]">Vendedor</option>
+            <option value="ADMIN" className="bg-[#111]">Administrador</option>
+            <option value="MANAGER" className="bg-[#111]">Gerente</option>
+          </select>
+        </div>
+      </div>
+      <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-2">
+        {loading ? "Guardando..." : submitLabel}
+      </Button>
+    </form>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -78,50 +184,21 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
               <DialogContent className="bg-[#0a0a0a] border-[#222] text-white">
                 <DialogHeader>
                   <DialogTitle>Crear Usuario</DialogTitle>
-                  <DialogDescription className="text-zinc-400">
-                    Añadí un nuevo acceso al sistema Rodmell.
-                  </DialogDescription>
+                  <DialogDescription className="text-zinc-400">Añadí un nuevo acceso al sistema Rodmell.</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Nombre Completo</label>
-                    <Input required className="bg-[#111] border-[#333]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Nombre de Usuario (Login)</label>
-                    <Input required className="bg-[#111] border-[#333]" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Teléfono</label>
-                    <Input className="bg-[#111] border-[#333]" placeholder="Ej: +54 9 11 1234-5678" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Contraseña</label>
-                    <Input required type="password" className="bg-[#111] border-[#333]" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Rol</label>
-                    <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white outline-none" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
-                      <option value="SELLER" className="bg-[#111] text-white">Vendedor</option>
-                      <option value="ADMIN" className="bg-[#111] text-white">Administrador</option>
-                      <option value="MANAGER" className="bg-[#111] text-white">Gerente</option>
-                    </select>
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
-                    {loading ? "Creando..." : "Guardar Usuario"}
-                  </Button>
-                </form>
+                <UserForm data={formData} setData={setFormData} onSubmit={handleSubmit} submitLabel="Crear Usuario" />
               </DialogContent>
             </Dialog>
           </div>
 
-          <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
+          <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="border-[#222] hover:bg-transparent">
                   <TableHead className="text-zinc-400">Usuario</TableHead>
                   <TableHead className="text-zinc-400">Rol</TableHead>
                   <TableHead className="text-zinc-400">Creado</TableHead>
+                  <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,14 +206,32 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
                   <TableRow key={u.id} className="border-[#222] hover:bg-[#111]">
                     <TableCell className="font-medium text-white">
                       <div>{u.name}</div>
-                      <div className="text-xs text-zinc-500">@{u.username} {u.phone ? `- ${u.phone}` : ""}</div>
+                      <div className="text-xs text-zinc-500">@{u.username} {u.phone ? `· ${u.phone}` : ""}</div>
                     </TableCell>
-                    <TableCell className="text-zinc-300">
-                      <span className="bg-[#111] border border-[#333] px-2 py-1 rounded text-xs text-zinc-300">
-                        {u.role}
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${ROLE_COLORS[u.role] || "text-zinc-300 border-zinc-700 bg-zinc-800"}`}>
+                        {ROLE_LABELS[u.role] || u.role}
                       </span>
                     </TableCell>
-                    <TableCell className="text-zinc-500">{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-zinc-500 text-sm">{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleEdit(u)}
+                          className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors"
+                          title="Editar usuario"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+                          title="Eliminar usuario"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -160,9 +255,7 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
                 <TableBody>
                   {logs.length === 0 ? (
                     <TableRow className="border-[#222] hover:bg-transparent">
-                      <TableCell colSpan={3} className="text-center py-8 text-zinc-500">
-                        No hay registros de actividad.
-                      </TableCell>
+                      <TableCell colSpan={3} className="text-center py-8 text-zinc-500">No hay registros de actividad.</TableCell>
                     </TableRow>
                   ) : (
                     logs.map((l) => (
@@ -182,6 +275,17 @@ export default function SettingsClient({ users, logs }: { users: any[], logs: an
           </div>
         </div>
       </div>
+
+      {/* EDIT USER DIALOG */}
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent className="bg-[#0a0a0a] border-[#222] text-white">
+          <DialogHeader>
+            <DialogTitle>Editar Usuario</DialogTitle>
+            <DialogDescription className="text-zinc-400">Modificá los datos de @{selectedUser?.username}.</DialogDescription>
+          </DialogHeader>
+          <UserForm data={editData} setData={setEditData} onSubmit={handleUpdateUser} submitLabel="Guardar Cambios" />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
