@@ -5,6 +5,7 @@ import ReportsClient from "./ReportsClient";
 
 export default async function ReportsPage() {
   const sales = await prisma.operacion.findMany({
+    where: { confirmado: true },
     orderBy: { createdAt: "asc" },
     include: {
       pagos: true,

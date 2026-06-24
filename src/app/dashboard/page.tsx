@@ -24,7 +24,10 @@ export default async function DashboardPage() {
   thisMonth.setHours(0,0,0,0);
   
   const salesThisMonth = await prisma.operacion.findMany({
-    where: { createdAt: { gte: thisMonth } }
+    where: {
+      createdAt: { gte: thisMonth },
+      confirmado: true
+    }
   });
   const salesTotal = salesThisMonth.reduce((acc, sale) => acc + sale.total, 0);
 

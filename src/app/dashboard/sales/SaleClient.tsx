@@ -44,7 +44,34 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
     const selected = options.find((o: any) => o.value === value);
     if (selected) setSearch(selected.label);
     else setSearch("");
-  }, [value, options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]); // ONLY depend on value
+
+  const handleInputChange = (val: string) => {
+    setSearch(val);
+    setOpen(true);
+    if (val === "") {
+      onChange("");
+    }
+  };
+
+  const handleSelect = (optionVal: string, optionLabel: string) => {
+    onChange(optionVal);
+    setSearch(optionLabel);
+    setOpen(false);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      setOpen(false);
+      const selected = options.find((o: any) => o.value === value);
+      if (selected) {
+        setSearch(selected.label);
+      } else {
+        setSearch("");
+      }
+    }, 200);
+  };
 
   return (
     <div className="relative">
@@ -53,9 +80,9 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
           className="w-full bg-[#111] border-[#333] pr-10" 
           placeholder={placeholder} 
           value={search} 
-          onChange={e => { setSearch(e.target.value); setOpen(true); onChange(""); }}
+          onChange={e => handleInputChange(e.target.value)}
           onClick={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          onBlur={handleBlur}
         />
         <ChevronDown 
           className="absolute right-3 w-4 h-4 text-zinc-500 cursor-pointer pointer-events-none" 
@@ -68,11 +95,8 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
               key={o.value} 
               className="px-3 py-2 text-sm text-zinc-300 hover:bg-[#333] hover:text-white cursor-pointer"
               onMouseDown={(e) => {
-                // use onMouseDown to fire before onBlur
                 e.preventDefault(); 
-                onChange(o.value);
-                setSearch(o.label);
-                setOpen(false);
+                handleSelect(o.value, o.label);
               }}
             >
               {o.label}
@@ -346,7 +370,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                       <SearchableSelect 
                         placeholder="Escribí para buscar..."
                         value={formData.clienteId}
-                        onChange={(val: string) => setFormData({...formData, clienteId: val})}
+                        onChange={(val: string) => setFormData(prev => ({...prev, clienteId: val}))}
                         options={customers.map(c => ({ value: c.id, label: `${c.nombreCompleto} (DNI: ${c.dni || "-"})` }))}
                       />
                     </div>
@@ -356,7 +380,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                         placeholder="Escribí para buscar..."
                         value={formData.vehiculoId}
                         onChange={(val: string) => {
-                          setFormData({...formData, vehiculoId: val});
+                          setFormData(prev => ({...prev, vehiculoId: val}));
                           const combinedVehicles = [...vehicles];
                           if (editingId) {
                             const currentSale = sales.find(s => s.id === editingId);
@@ -366,7 +390,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                           }
                           const v = combinedVehicles.find(v => v.id === val);
                           if (v && v.precioVenta) {
-                            setFormData(prev => ({...prev, vehiculoId: val, precioVehiculo: v.precioVenta.toString()}));
+                            setFormData(prev => ({...prev, vehiculoId: val, precioVehiculo: formatThousands(v.precioVenta)}));
                           }
                         }}
                         options={[
@@ -387,7 +411,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                     
                     <div className="space-y-2 col-span-2 mt-4">
                       <label className="text-sm font-medium text-zinc-300">String Forma de Pago (Editable)</label>
-                      <Input required className="bg-[#111] border-[#333]" value={formData.formaPago} onChange={e => setFormData({...formData, formaPago: e.target.value})} />
+                      <Input required className="bg-[#111] border-[#333]" value={formData.formaPago} onChange={e => { const val = e.target.value; setFormData(prev => ({...prev, formaPago: val})); }} />
                     </div>
                   </div>
                 </div>
