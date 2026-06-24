@@ -139,13 +139,7 @@ export default async function DashboardPage() {
                 recentVehicles.map(vehiculo => (
                   <div key={vehiculo.id} className="flex gap-4 p-3 rounded-xl border border-[#222] bg-[#111] hover:border-[#444] transition-colors">
                     <div className="relative w-20 h-16 rounded-md overflow-hidden bg-black flex-shrink-0">
-                      {vehiculo.fotos && vehiculo.fotos.length > 0 ? (
-                        <Image src={vehiculo.fotos[0]} alt={vehiculo.modelo} fill className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Car className="w-6 h-6 text-zinc-600" />
-                        </div>
-                      )}
+                      <Image src={vehiculo.fotos && vehiculo.fotos.length > 0 ? vehiculo.fotos[0] : "/Default.png"} alt={vehiculo.modelo} fill className="object-cover" />
                     </div>
                     <div>
                       <h4 className="text-white font-bold text-sm leading-tight">{vehiculo.marca} {vehiculo.modelo}</h4>

@@ -7,8 +7,15 @@ export const dynamic = 'force-dynamic';
 
 export default async function CatalogoPage() {
   const vehiclesData = await prisma.vehiculo.findMany({
-    where: { estado: "DISPONIBLE" },
-    orderBy: { createdAt: "desc" }
+    where: {
+      operaciones: {
+        none: {}
+      }
+    },
+    orderBy: [
+      { destacado: "desc" },
+      { createdAt: "desc" }
+    ]
   });
 
   return (

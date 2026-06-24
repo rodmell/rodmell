@@ -42,6 +42,8 @@ export async function POST(req: Request) {
         precioUSD: body.precioUSD ? parseFloat(body.precioUSD) : null,
         condicion: body.condicion || null,
         combustible: body.combustible || null,
+        transmision: body.transmision || null,
+        destacado: body.destacado === true,
         fotos: body.fotos || [],
       },
     });

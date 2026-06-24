@@ -13,15 +13,9 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
 
   const filteredVehicles = vehiclesData.filter(v => (v.tipo || "AUTO") === activeTab);
 
-  const defaultImages = [
-    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1503376760367-1b61b4fa0323?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80"
-  ];
-
-  const handleOpenDetails = (vehiculo: any, index: number) => {
+  const handleOpenDetails = (vehiculo: any) => {
     setSelectedVehicle(vehiculo);
-    setMainImage(vehiculo.fotos?.length > 0 ? vehiculo.fotos[0] : defaultImages[index % defaultImages.length]);
+    setMainImage(vehiculo.fotos?.length > 0 ? vehiculo.fotos[0] : "/Default.png");
     setOpen(true);
   };
 
@@ -111,7 +105,7 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
                     )}
                   </div>
                   <img
-                    src={(vehiculo.fotos && vehiculo.fotos.length > 0) ? vehiculo.fotos[0] : defaultImages[index % defaultImages.length]}
+                    src={(vehiculo.fotos && vehiculo.fotos.length > 0) ? vehiculo.fotos[0] : "/Default.png"}
                     alt={`${vehiculo.marca} ${vehiculo.modelo}`}
                     className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
                   />
@@ -145,7 +139,7 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
                     </div>
                     <div className="flex items-center gap-2">
                       <Settings2 className="h-4 w-4 text-yellow-500/70" />
-                      <span>Automática</span>
+                      <span>{vehiculo.transmision || "Manual"}</span>
                     </div>
                   </div>
 
@@ -154,7 +148,7 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
                       <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-1">Precio</p>
                       <p className="text-2xl font-bold text-white">${vehiculo.precioVenta.toLocaleString()}</p>
                     </div>
-                    <button onClick={() => handleOpenDetails(vehiculo, index)} className="bg-transparent hover:bg-yellow-500 hover:text-black text-yellow-500 border border-yellow-500 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300">
+                    <button onClick={() => handleOpenDetails(vehiculo)} className="bg-transparent hover:bg-yellow-500 hover:text-black text-yellow-500 border border-yellow-500 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300">
                       Ver Detalles
                     </button>
                   </div>
@@ -242,7 +236,7 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
                       <Settings2 className="h-5 w-5 text-yellow-500" />
                       <div>
                         <p className="text-xs text-zinc-500">Transmisión</p>
-                        <p className="font-semibold text-white">Automática</p>
+                        <p className="font-semibold text-white">{selectedVehicle.transmision || "Manual"}</p>
                       </div>
                     </div>
                   </div>

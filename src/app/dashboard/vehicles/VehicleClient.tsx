@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Plus, Search, Edit, Trash2, X } from "lucide-react";
+import { Car, Plus, Search, Edit, Trash2, X, Star } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -40,6 +40,10 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     "Por ingresar", "En Stock", "Okm", "Usado"
   ]);
 
+  const [transmisionOptions, setTransmisionOptions] = useState([
+    "Manual", "Automática"
+  ]);
+
   const [formData, setFormData] = useState({
     tipo: "AUTO",
     marca: "",
@@ -55,6 +59,8 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     precioUSD: "",
     condicion: "Por ingresar",
     combustible: "Nafta",
+    transmision: "Manual",
+    destacado: false,
     descripcion: "",
   });
 
@@ -91,9 +97,50 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     }
   };
 
+  const handleTransmisionChange = (val: string) => {
+    if (val === "ADD_NEW") {
+      const newVal = prompt("Ingrese el nuevo tipo de transmisión:");
+      if (newVal && newVal.trim() !== "") {
+        const trimmed = newVal.trim();
+        if (!transmisionOptions.includes(trimmed)) {
+          setTransmisionOptions(prev => [...prev, trimmed]);
+        }
+        setFormData(prev => ({ ...prev, transmision: trimmed }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, transmision: val }));
+    }
+  };
+
+  const handleToggleDestacado = async (vehicle: any) => {
+    const isCurrentlyDestacado = vehicle.destacado || false;
+    if (!isCurrentlyDestacado) {
+      const currentDestacadosCount = vehicles.filter(v => v.destacado).length;
+      if (currentDestacadosCount >= 3) {
+        alert("Solo podés destacar hasta 3 vehículos. Desmarcá uno de los destacados actuales primero.");
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/vehicles/${vehicle.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destacado: !isCurrentlyDestacado }),
+      });
+      if (res.ok) {
+        router.refresh();
+      } else {
+        alert("Error al actualizar el estado destacado");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleNew = () => {
     setEditingId(null);
-    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", descripcion: "" });
+    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", transmision: "Manual", destacado: false, descripcion: "" });
     setExistingPhotos([]);
     setPreviewUrls([]);
     setPortadaUrl(null);
@@ -102,12 +149,15 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   };
 
   const handleEdit = (v: any) => {
-    // If the vehicle has a custom condition/combustible, add it to options dynamically
+    // If the vehicle has a custom condition/combustible/transmission, add it to options dynamically
     if (v.condicion && !condicionOptions.includes(v.condicion)) {
       setCondicionOptions(prev => [...prev, v.condicion]);
     }
     if (v.combustible && !combustibleOptions.includes(v.combustible)) {
       setCombustibleOptions(prev => [...prev, v.combustible]);
+    }
+    if (v.transmision && !transmisionOptions.includes(v.transmision)) {
+      setTransmisionOptions(prev => [...prev, v.transmision]);
     }
 
     setEditingId(v.id);
@@ -126,6 +176,8 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       precioUSD: v.precioUSD?.toString() || "",
       condicion: v.condicion || "Por ingresar",
       combustible: v.combustible || "Nafta",
+      transmision: v.transmision || "Manual",
+      destacado: v.destacado || false,
       descripcion: v.descripcion || "",
     });
     setExistingPhotos(v.fotos || []);
@@ -242,7 +294,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         setExistingPhotos([]);
         setPreviewUrls([]);
         setPortadaUrl(null);
-        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", descripcion: "" });
+        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", transmision: "Manual", destacado: false, descripcion: "" });
         setFiles([]);
         router.refresh();
       }
@@ -357,6 +409,19 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                   <label className="text-sm font-medium text-zinc-300">Chasis</label>
                   <Input className="bg-[#111] border-[#333]" value={formData.chasis} onChange={e => setFormData({...formData, chasis: e.target.value})} />
                 </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <label className="text-sm font-medium text-zinc-300">Transmisión</label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] rounded-md h-10 px-3 text-sm text-white focus:outline-none focus:border-yellow-500"
+                    value={formData.transmision}
+                    onChange={e => handleTransmisionChange(e.target.value)}
+                  >
+                    {transmisionOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                    <option value="ADD_NEW" className="text-yellow-500 font-semibold">+ Agregar nuevo...</option>
+                  </select>
+                </div>
                 <div className="space-y-2 col-span-2">
                   <label className="text-sm font-medium text-zinc-300">Descripción Pública</label>
                   <textarea 
@@ -464,6 +529,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
               <TableHead className="text-zinc-400">Marca / Modelo</TableHead>
               <TableHead className="text-zinc-400">Año / KM</TableHead>
               <TableHead className="text-zinc-400">Patente</TableHead>
+              <TableHead className="text-zinc-400">Destacado</TableHead>
               <TableHead className="text-zinc-400 text-right">$ Cdo. Info</TableHead>
               <TableHead className="text-zinc-400 text-right">$ Factura</TableHead>
               <TableHead className="text-zinc-400 text-right">USD</TableHead>
@@ -491,6 +557,15 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                   <TableCell className="font-medium text-white">{v.marca} {v.modelo}</TableCell>
                   <TableCell className="text-zinc-300">{v.anio} <br/><span className="text-xs text-zinc-500">{v.kilometros} km</span></TableCell>
                   <TableCell className="text-zinc-300 uppercase">{v.dominio}</TableCell>
+                  <TableCell>
+                    <button 
+                      onClick={() => handleToggleDestacado(v)}
+                      className={`p-1.5 rounded transition-colors ${v.destacado ? 'text-yellow-500 hover:text-yellow-400' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      title={v.destacado ? "Quitar destacado" : "Destacar vehículo (máx. 3)"}
+                    >
+                      <Star className={`w-5 h-5 ${v.destacado ? 'fill-yellow-500' : ''}`} />
+                    </button>
+                  </TableCell>
                   <TableCell className="text-right text-zinc-300">{v.precioCosto ? `$${v.precioCosto.toLocaleString()}` : '-'}</TableCell>
                   <TableCell className="text-right text-zinc-300">{v.precioFactura ? `$${v.precioFactura.toLocaleString()}` : '-'}</TableCell>
                   <TableCell className="text-right text-green-500 font-medium">{v.precioUSD ? `US$ ${v.precioUSD.toLocaleString()}` : '-'}</TableCell>

@@ -105,6 +105,8 @@ model Vehiculo {
   precioUSD    Float?
   condicion    String?
   combustible  String?
+  transmision  String?
+  destacado    Boolean        @default(false)
   descripcion  String?
   estado       EstadoVehiculo @default(DISPONIBLE)
   fotos        String[]       // Array of image URLs
