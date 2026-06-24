@@ -11,9 +11,11 @@ import {
   ChevronDown,
   BadgeDollarSign, 
   Edit,
-  Wallet
+  Wallet,
+  Check
 } from "lucide-react";
 import Link from "next/link";
+import { formatThousands, parseThousands } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -108,6 +110,11 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     autoPartePago: "",
     detalleAutoPartePago: "",
 
+    gastosPatente: "",
+    gastosTransferencia: "",
+    gastosPrendarios: "",
+    confirmado: false,
+
     formaPago: "",
     total: "",
     saldoPendiente: "0",
@@ -118,20 +125,24 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
 
   // Recalculate calculations automatically when inputs change
   useEffect(() => {
-    const precioVehiculo = parseFloat(formData.precioVehiculo) || 0;
-    const credito = formData.hasCredito ? (parseFloat(formData.credito) || 0) : 0;
+    const precioVehiculo = parseThousands(formData.precioVehiculo);
+    const credito = formData.hasCredito ? parseThousands(formData.credito) : 0;
     const porcentajeQuebranto = formData.hasCredito ? (parseFloat(formData.porcentajeQuebranto) || 0) : 0;
     
     // Calcular Quebranto (Crédito * (Porcentaje/100) * 1.21 de IVA)
     const calculadoQuebranto = credito * (porcentajeQuebranto / 100) * 1.21;
-    const quebrantoStr = calculadoQuebranto.toFixed(2);
+    const quebrantoStr = formatThousands(Math.round(calculadoQuebranto));
 
-    // Total = Precio + Quebranto
-    const calculadoTotal = precioVehiculo + calculadoQuebranto;
+    const gastosPatente = parseThousands(formData.gastosPatente);
+    const gastosTransferencia = parseThousands(formData.gastosTransferencia);
+    const gastosPrendarios = parseThousands(formData.gastosPrendarios);
+
+    // Total = Precio + Quebranto + Gastos
+    const calculadoTotal = precioVehiculo + calculadoQuebranto + gastosPatente + gastosTransferencia + gastosPrendarios;
 
     // Pagos
-    const pagoEfectivo = formData.hasEfectivo ? (parseFloat(formData.efectivo) || 0) : 0;
-    const pagoAuto = formData.hasAuto ? (parseFloat(formData.autoPartePago) || 0) : 0;
+    const pagoEfectivo = formData.hasEfectivo ? parseThousands(formData.efectivo) : 0;
+    const pagoAuto = formData.hasAuto ? parseThousands(formData.autoPartePago) : 0;
     const totalPagado = pagoEfectivo + credito + pagoAuto;
 
     // Saldo Pendiente
@@ -147,16 +158,41 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     setFormData(prev => ({
       ...prev,
       quebranto: quebrantoStr,
-      total: calculadoTotal.toFixed(2),
-      saldoPendiente: calculadoSaldo.toFixed(2),
-      formaPago: prev.formaPago || calculadoFormaPago // Only auto-set if not manually overridden by user or we can just override it here constantly. Let's just update if it's generated.
+      total: formatThousands(Math.round(calculadoTotal)),
+      saldoPendiente: formatThousands(Math.round(calculadoSaldo)),
+      formaPago: prev.formaPago || calculadoFormaPago
     }));
   }, [
     formData.precioVehiculo,
     formData.hasEfectivo, formData.efectivo,
     formData.hasCredito, formData.credito, formData.porcentajeQuebranto,
-    formData.hasAuto, formData.autoPartePago
+    formData.hasAuto, formData.autoPartePago,
+    formData.gastosPatente, formData.gastosTransferencia, formData.gastosPrendarios
   ]);
+
+  const handleAmountChange = (field: string, val: string) => {
+    setFormData(prev => ({ ...prev, [field]: formatThousands(val) }));
+  };
+
+  const handleConfirmSale = async (sale: any) => {
+    if (!confirm(`¿Confirmar el pago y registrar la venta ${sale.comprobante || sale.id.slice(-6).toUpperCase()} como pagada?`)) return;
+    try {
+      const res = await fetch(`/api/sales/${sale.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmado: true }),
+      });
+      if (res.ok) {
+        router.refresh();
+        const updatedSale = { ...sale, confirmado: true };
+        handleDownloadPDF(updatedSale);
+      } else {
+        alert("Error al confirmar el pago");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleNew = () => {
     setEditingId(null);
@@ -165,6 +201,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
       hasEfectivo: false, efectivo: "",
       hasCredito: false, credito: "", porcentajeQuebranto: "", quebranto: "0",
       hasAuto: false, autoPartePago: "", detalleAutoPartePago: "",
+      gastosPatente: "", gastosTransferencia: "", gastosPrendarios: "", confirmado: false,
       formaPago: "", total: "", saldoPendiente: "0", observaciones: ""
     });
     setOpen(true);
@@ -175,19 +212,23 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     setFormData({
       clienteId: s.clienteId,
       vehiculoId: s.vehiculoId,
-      precioVehiculo: s.precioVehiculo.toString(),
+      precioVehiculo: formatThousands(s.precioVehiculo),
       hasEfectivo: (s.efectivo && s.efectivo > 0) ? true : false,
-      efectivo: s.efectivo ? s.efectivo.toString() : "",
+      efectivo: s.efectivo ? formatThousands(s.efectivo) : "",
       hasCredito: (s.credito && s.credito > 0) ? true : false,
-      credito: s.credito ? s.credito.toString() : "",
+      credito: s.credito ? formatThousands(s.credito) : "",
       porcentajeQuebranto: s.porcentajeQuebranto ? s.porcentajeQuebranto.toString() : "",
-      quebranto: s.quebranto ? s.quebranto.toString() : "0",
+      quebranto: s.quebranto ? formatThousands(s.quebranto) : "0",
       hasAuto: (s.autoPartePago && s.autoPartePago > 0) ? true : false,
-      autoPartePago: s.autoPartePago ? s.autoPartePago.toString() : "",
+      autoPartePago: s.autoPartePago ? formatThousands(s.autoPartePago) : "",
       detalleAutoPartePago: s.detalleAutoPartePago || "",
+      gastosPatente: s.gastosPatente ? formatThousands(s.gastosPatente) : "",
+      gastosTransferencia: s.gastosTransferencia ? formatThousands(s.gastosTransferencia) : "",
+      gastosPrendarios: s.gastosPrendarios ? formatThousands(s.gastosPrendarios) : "",
+      confirmado: s.confirmado || false,
       formaPago: s.formaPago || "",
-      total: s.total.toString(),
-      saldoPendiente: s.saldoPendiente.toString(),
+      total: formatThousands(s.total),
+      saldoPendiente: formatThousands(s.saldoPendiente),
       observaciones: s.observaciones || "",
     });
     setOpen(true);
@@ -215,20 +256,25 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
       const payload = {
         clienteId: formData.clienteId,
         vehiculoId: formData.vehiculoId,
-        precioVehiculo: parseFloat(formData.precioVehiculo) || 0,
+        precioVehiculo: parseThousands(formData.precioVehiculo),
         formaPago: formData.formaPago,
         
-        efectivo: formData.hasEfectivo ? (parseFloat(formData.efectivo) || 0) : null,
-        credito: formData.hasCredito ? (parseFloat(formData.credito) || 0) : null,
+        efectivo: formData.hasEfectivo ? parseThousands(formData.efectivo) : null,
+        credito: formData.hasCredito ? parseThousands(formData.credito) : null,
         porcentajeQuebranto: formData.hasCredito ? (parseFloat(formData.porcentajeQuebranto) || 0) : null,
-        quebranto: formData.hasCredito ? (parseFloat(formData.quebranto) || 0) : null,
-        autoPartePago: formData.hasAuto ? (parseFloat(formData.autoPartePago) || 0) : null,
+        quebranto: formData.hasCredito ? parseThousands(formData.quebranto) : null,
+        autoPartePago: formData.hasAuto ? parseThousands(formData.autoPartePago) : null,
         detalleAutoPartePago: formData.hasAuto ? formData.detalleAutoPartePago : null,
         
+        gastosPatente: parseThousands(formData.gastosPatente),
+        gastosTransferencia: parseThousands(formData.gastosTransferencia),
+        gastosPrendarios: parseThousands(formData.gastosPrendarios),
+        confirmado: formData.confirmado,
+        
         observaciones: formData.observaciones,
-        total: parseFloat(formData.total) || 0,
-        saldoPendiente: parseFloat(formData.saldoPendiente) || 0,
-        vendedorId: session?.user?.id || "cl123", // Assuming cl123 as fallback, normally handled by session
+        total: parseThousands(formData.total),
+        saldoPendiente: parseThousands(formData.saldoPendiente),
+        vendedorId: session?.user?.id || "cl123",
       };
       
       const url = editingId ? `/api/sales/${editingId}` : "/api/sales";
@@ -247,6 +293,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
           hasEfectivo: false, efectivo: "",
           hasCredito: false, credito: "", porcentajeQuebranto: "", quebranto: "0",
           hasAuto: false, autoPartePago: "", detalleAutoPartePago: "",
+          gastosPatente: "", gastosTransferencia: "", gastosPrendarios: "", confirmado: false,
           formaPago: "", total: "", saldoPendiente: "0", observaciones: ""
         });
         router.refresh();
@@ -335,7 +382,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                     </div>
                     <div className="space-y-2 col-span-2">
                       <label className="text-sm font-medium text-zinc-300">Precio del Vehículo Acordado</label>
-                      <Input required type="number" className="bg-[#111] border-[#333] text-lg text-yellow-500 font-semibold" value={formData.precioVehiculo} onChange={e => setFormData({...formData, precioVehiculo: e.target.value})} />
+                      <Input required type="text" className="bg-[#111] border-[#333] text-lg text-yellow-500 font-semibold" value={formData.precioVehiculo} onChange={e => handleAmountChange("precioVehiculo", e.target.value)} />
                     </div>
                     
                     <div className="space-y-2 col-span-2 mt-4">
@@ -359,7 +406,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                       {formData.hasEfectivo && (
                         <div className="pl-6 space-y-2">
                           <Label className="text-xs text-zinc-500">Monto en Efectivo</Label>
-                          <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.efectivo} onChange={e => setFormData({...formData, efectivo: e.target.value})} />
+                          <Input type="text" className="bg-[#0a0a0a] border-[#333]" placeholder="0" value={formData.efectivo} onChange={e => handleAmountChange("efectivo", e.target.value)} />
                         </div>
                       )}
                     </div>
@@ -374,7 +421,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                         <div className="pl-6 grid grid-cols-2 gap-4">
                           <div className="space-y-2 col-span-2 md:col-span-1">
                             <Label className="text-xs text-zinc-500">Monto del Crédito</Label>
-                            <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.credito} onChange={e => setFormData({...formData, credito: e.target.value})} />
+                            <Input type="text" className="bg-[#0a0a0a] border-[#333]" placeholder="0" value={formData.credito} onChange={e => handleAmountChange("credito", e.target.value)} />
                           </div>
                           <div className="space-y-2 col-span-2 md:col-span-1">
                             <Label className="text-xs text-zinc-500">% Quebranto</Label>
@@ -382,7 +429,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                           </div>
                           <div className="space-y-2 col-span-2">
                             <Label className="text-xs text-zinc-500">Costo de Quebranto Calculado (+21% IVA)</Label>
-                            <Input readOnly type="number" className="bg-[#222] border-[#444] text-zinc-400" value={formData.quebranto} />
+                            <Input readOnly type="text" className="bg-[#222] border-[#444] text-zinc-400" value={formData.quebranto} />
                           </div>
                         </div>
                       )}
@@ -398,7 +445,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                         <div className="pl-6 grid grid-cols-2 gap-4">
                           <div className="space-y-2 col-span-2 md:col-span-1">
                             <Label className="text-xs text-zinc-500">Valor Reconocido</Label>
-                            <Input type="number" className="bg-[#0a0a0a] border-[#333]" placeholder="0.00" value={formData.autoPartePago} onChange={e => setFormData({...formData, autoPartePago: e.target.value})} />
+                            <Input type="text" className="bg-[#0a0a0a] border-[#333]" placeholder="0" value={formData.autoPartePago} onChange={e => handleAmountChange("autoPartePago", e.target.value)} />
                           </div>
                           <div className="space-y-2 col-span-2 md:col-span-1">
                             <Label className="text-xs text-zinc-500">Detalles</Label>
@@ -409,15 +456,34 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                     </div>
                   </div>
 
+                  {/* GASTOS ADICIONALES */}
+                  <div className="space-y-4 border border-[#333] p-4 rounded-lg bg-[#111]/50">
+                    <h3 className="text-sm font-medium text-zinc-300 mb-2">Gastos Adicionales</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">Patente</Label>
+                        <Input type="text" className="bg-[#0a0a0a] border-[#333] text-sm" placeholder="0" value={formData.gastosPatente} onChange={e => handleAmountChange("gastosPatente", e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">Transferencia</Label>
+                        <Input type="text" className="bg-[#0a0a0a] border-[#333] text-sm" placeholder="0" value={formData.gastosTransferencia} onChange={e => handleAmountChange("gastosTransferencia", e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">Prendarios</Label>
+                        <Input type="text" className="bg-[#0a0a0a] border-[#333] text-sm" placeholder="0" value={formData.gastosPrendarios} onChange={e => handleAmountChange("gastosPrendarios", e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Resumen */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-zinc-300">Total a Pagar</label>
-                      <Input required type="number" className="bg-[#111] border-[#333] text-lg" value={formData.total} onChange={e => setFormData({...formData, total: e.target.value})} />
+                      <Input required readOnly type="text" className="bg-[#222] border-[#333] text-lg text-yellow-500 font-semibold" value={formData.total} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-zinc-300">Saldo Pendiente</label>
-                      <Input required type="number" className="bg-[#111] border-[#333] text-lg text-red-400" value={formData.saldoPendiente} onChange={e => setFormData({...formData, saldoPendiente: e.target.value})} />
+                      <Input required readOnly type="text" className="bg-[#222] border-[#333] text-lg text-red-400 font-semibold" value={formData.saldoPendiente} />
                     </div>
                   </div>
                 </div>
@@ -450,6 +516,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
               <TableHead className="text-zinc-400">Vehículo</TableHead>
               <TableHead className="text-zinc-400">Forma Pago</TableHead>
               <TableHead className="text-zinc-400">Nº Comp.</TableHead>
+              <TableHead className="text-zinc-400">Estado</TableHead>
               <TableHead className="text-zinc-400 text-right">Total</TableHead>
               <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
             </TableRow>
@@ -481,12 +548,29 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                   <TableCell className="text-zinc-300">{s.vehiculo?.marca} {s.vehiculo?.modelo}</TableCell>
                   <TableCell className="text-zinc-300">{s.formaPago}</TableCell>
                   <TableCell className="text-yellow-500 font-mono text-xs">{s.comprobante || s.id.slice(-6).toUpperCase()}</TableCell>
+                  <TableCell>
+                    {s.confirmado ? (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold border text-green-400 border-green-500/30 bg-green-500/10">
+                        Pagado
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold border text-yellow-400 border-yellow-500/30 bg-yellow-500/10">
+                        A Confirmar
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleDownloadPDF(s)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
-                        <FileText className="w-4 h-4" />
-                      </button>
+                      {s.confirmado ? (
+                        <button onClick={() => handleDownloadPDF(s)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button onClick={() => handleConfirmSale(s)} className="p-1.5 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Confirmar Pago y Descargar Comprobante">
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
                       <Link href={`/dashboard/sales/${s.id}/payments`} className="p-1.5 text-zinc-400 hover:text-green-500 hover:bg-green-500/10 rounded transition-colors" title="Gestión de Pagos y Cuotas">
                         <Wallet className="w-4 h-4" />
                       </Link>

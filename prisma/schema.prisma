@@ -104,6 +104,7 @@ model Vehiculo {
   precioFactura Float?
   precioUSD    Float?
   condicion    String?
+  combustible  String?
   descripcion  String?
   estado       EstadoVehiculo @default(DISPONIBLE)
   fotos        String[]       // Array of image URLs
@@ -130,6 +131,10 @@ model Operacion {
   gastosPrenda      Float?
   accesorios        Float?
   quebranto         Float?
+  gastosPatente     Float?
+  gastosTransferencia Float?
+  gastosPrendarios   Float?
+  confirmado        Boolean   @default(false)
   observaciones     String?
   total             Float
   saldoPendiente    Float

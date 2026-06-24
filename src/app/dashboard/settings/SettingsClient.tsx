@@ -155,41 +155,7 @@ export default function SettingsClient({ users, logs: initialLogs }: { users: an
     setLoading(false);
   };
 
-  const UserForm = ({ data, setData, onSubmit, submitLabel }: any) => (
-    <form onSubmit={onSubmit} className="space-y-4 mt-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2 col-span-2">
-          <label className="text-sm font-medium text-zinc-300">Nombre Completo</label>
-          <Input required className="bg-[#111] border-[#333]" value={data.name} onChange={e => setData({ ...data, name: e.target.value })} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-300">Usuario (Login)</label>
-          <Input required className="bg-[#111] border-[#333]" value={data.username} onChange={e => setData({ ...data, username: e.target.value })} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-300">Teléfono</label>
-          <Input className="bg-[#111] border-[#333]" placeholder="+54 9 11..." value={data.phone} onChange={e => setData({ ...data, phone: e.target.value })} />
-        </div>
-        <div className="space-y-2 col-span-2">
-          <label className="text-sm font-medium text-zinc-300">
-            Contraseña {submitLabel === "Guardar Cambios" && <span className="text-zinc-500">(dejar vacío para no cambiar)</span>}
-          </label>
-          <Input type="password" required={submitLabel !== "Guardar Cambios"} className="bg-[#111] border-[#333]" value={data.password} onChange={e => setData({ ...data, password: e.target.value })} />
-        </div>
-        <div className="space-y-2 col-span-2">
-          <label className="text-sm font-medium text-zinc-300">Rol</label>
-          <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white outline-none" value={data.role} onChange={e => setData({ ...data, role: e.target.value })}>
-            <option value="SELLER" className="bg-[#111]">Vendedor</option>
-            <option value="ADMIN" className="bg-[#111]">Administrador</option>
-            <option value="MANAGER" className="bg-[#111]">Gerente</option>
-          </select>
-        </div>
-      </div>
-      <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-2">
-        {loading ? "Guardando..." : submitLabel}
-      </Button>
-    </form>
-  );
+
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -215,7 +181,7 @@ export default function SettingsClient({ users, logs: initialLogs }: { users: an
                   <DialogTitle>Crear Usuario</DialogTitle>
                   <DialogDescription className="text-zinc-400">Añadí un nuevo acceso al sistema Rodmell.</DialogDescription>
                 </DialogHeader>
-                <UserForm data={formData} setData={setFormData} onSubmit={handleSubmit} submitLabel="Crear Usuario" />
+                <UserForm data={formData} setData={setFormData} onSubmit={handleSubmit} submitLabel="Crear Usuario" loading={loading} />
               </DialogContent>
             </Dialog>
           </div>
@@ -361,9 +327,45 @@ export default function SettingsClient({ users, logs: initialLogs }: { users: an
             <DialogTitle>Editar Usuario</DialogTitle>
             <DialogDescription className="text-zinc-400">Modificá los datos de @{selectedUser?.username}.</DialogDescription>
           </DialogHeader>
-          <UserForm data={editData} setData={setEditData} onSubmit={handleUpdateUser} submitLabel="Guardar Cambios" />
+          <UserForm data={editData} setData={setEditData} onSubmit={handleUpdateUser} submitLabel="Guardar Cambios" loading={loading} />
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+
+const UserForm = ({ data, setData, onSubmit, submitLabel, loading }: any) => (
+  <form onSubmit={onSubmit} className="space-y-4 mt-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2 col-span-2">
+        <label className="text-sm font-medium text-zinc-300">Nombre Completo</label>
+        <Input required className="bg-[#111] border-[#333]" value={data.name} onChange={e => setData({ ...data, name: e.target.value })} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-zinc-300">Usuario (Login)</label>
+        <Input required className="bg-[#111] border-[#333]" value={data.username} onChange={e => setData({ ...data, username: e.target.value })} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-zinc-300">Teléfono</label>
+        <Input className="bg-[#111] border-[#333]" placeholder="+54 9 11..." value={data.phone} onChange={e => setData({ ...data, phone: e.target.value })} />
+      </div>
+      <div className="space-y-2 col-span-2">
+        <label className="text-sm font-medium text-zinc-300">
+          Contraseña {submitLabel === "Guardar Cambios" && <span className="text-zinc-500">(dejar vacío para no cambiar)</span>}
+        </label>
+        <Input type="password" required={submitLabel !== "Guardar Cambios"} className="bg-[#111] border-[#333]" value={data.password} onChange={e => setData({ ...data, password: e.target.value })} />
+      </div>
+      <div className="space-y-2 col-span-2">
+        <label className="text-sm font-medium text-zinc-300">Rol</label>
+        <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white outline-none" value={data.role} onChange={e => setData({ ...data, role: e.target.value })}>
+          <option value="SELLER" className="bg-[#111]">Vendedor</option>
+          <option value="ADMIN" className="bg-[#111]">Administrador</option>
+          <option value="MANAGER" className="bg-[#111]">Gerente</option>
+        </select>
+      </div>
+    </div>
+    <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-2">
+      {loading ? "Guardando..." : submitLabel}
+    </Button>
+  </form>
+);

@@ -32,6 +32,14 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [portadaUrl, setPortadaUrl] = useState<string | null>(null);
 
+  const [combustibleOptions, setCombustibleOptions] = useState([
+    "Nafta", "Gas", "Hibrido", "Electrico"
+  ]);
+
+  const [condicionOptions, setCondicionOptions] = useState([
+    "Por ingresar", "En Stock", "Okm", "Usado"
+  ]);
+
   const [formData, setFormData] = useState({
     tipo: "AUTO",
     marca: "",
@@ -45,16 +53,47 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     precioCosto: "",
     precioFactura: "",
     precioUSD: "",
-    condicion: "",
+    condicion: "Por ingresar",
+    combustible: "Nafta",
     descripcion: "",
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
 
+  const handleCondicionChange = (val: string) => {
+    if (val === "ADD_NEW") {
+      const newVal = prompt("Ingrese la nueva condición:");
+      if (newVal && newVal.trim() !== "") {
+        const trimmed = newVal.trim();
+        if (!condicionOptions.includes(trimmed)) {
+          setCondicionOptions(prev => [...prev, trimmed]);
+        }
+        setFormData(prev => ({ ...prev, condicion: trimmed }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, condicion: val }));
+    }
+  };
+
+  const handleCombustibleChange = (val: string) => {
+    if (val === "ADD_NEW") {
+      const newVal = prompt("Ingrese el nuevo tipo de combustible:");
+      if (newVal && newVal.trim() !== "") {
+        const trimmed = newVal.trim();
+        if (!combustibleOptions.includes(trimmed)) {
+          setCombustibleOptions(prev => [...prev, trimmed]);
+        }
+        setFormData(prev => ({ ...prev, combustible: trimmed }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, combustible: val }));
+    }
+  };
+
   const handleNew = () => {
     setEditingId(null);
-    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "", descripcion: "" });
+    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", descripcion: "" });
     setExistingPhotos([]);
     setPreviewUrls([]);
     setPortadaUrl(null);
@@ -63,6 +102,14 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   };
 
   const handleEdit = (v: any) => {
+    // If the vehicle has a custom condition/combustible, add it to options dynamically
+    if (v.condicion && !condicionOptions.includes(v.condicion)) {
+      setCondicionOptions(prev => [...prev, v.condicion]);
+    }
+    if (v.combustible && !combustibleOptions.includes(v.combustible)) {
+      setCombustibleOptions(prev => [...prev, v.combustible]);
+    }
+
     setEditingId(v.id);
     setFormData({
       tipo: v.tipo || "AUTO",
@@ -77,7 +124,8 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       precioCosto: v.precioCosto?.toString() || "",
       precioFactura: v.precioFactura?.toString() || "",
       precioUSD: v.precioUSD?.toString() || "",
-      condicion: v.condicion || "",
+      condicion: v.condicion || "Por ingresar",
+      combustible: v.combustible || "Nafta",
       descripcion: v.descripcion || "",
     });
     setExistingPhotos(v.fotos || []);
@@ -194,7 +242,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         setExistingPhotos([]);
         setPreviewUrls([]);
         setPortadaUrl(null);
-        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "", descripcion: "" });
+        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", descripcion: "" });
         setFiles([]);
         router.refresh();
       }
@@ -241,7 +289,29 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                 </div>
                 <div className="space-y-2 col-span-2 sm:col-span-1">
                   <label className="text-sm font-medium text-zinc-300">Condición</label>
-                  <Input className="bg-[#111] border-[#333]" placeholder="ej: por ingresar" value={formData.condicion} onChange={e => setFormData({...formData, condicion: e.target.value})} />
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] rounded-md h-10 px-3 text-sm text-white focus:outline-none focus:border-yellow-500"
+                    value={formData.condicion}
+                    onChange={e => handleCondicionChange(e.target.value)}
+                  >
+                    {condicionOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                    <option value="ADD_NEW" className="text-yellow-500 font-semibold">+ Agregar nuevo...</option>
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <label className="text-sm font-medium text-zinc-300">Combustible</label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] rounded-md h-10 px-3 text-sm text-white focus:outline-none focus:border-yellow-500"
+                    value={formData.combustible}
+                    onChange={e => handleCombustibleChange(e.target.value)}
+                  >
+                    {combustibleOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                    <option value="ADD_NEW" className="text-yellow-500 font-semibold">+ Agregar nuevo...</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-zinc-300">Marca</label>

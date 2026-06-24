@@ -47,6 +47,11 @@ export async function POST(req: Request) {
         autoPartePago: body.autoPartePago !== null ? parseFloat(body.autoPartePago) : null,
         detalleAutoPartePago: body.detalleAutoPartePago || null,
         
+        gastosPatente: body.gastosPatente !== null && body.gastosPatente !== undefined ? parseFloat(body.gastosPatente) : null,
+        gastosTransferencia: body.gastosTransferencia !== null && body.gastosTransferencia !== undefined ? parseFloat(body.gastosTransferencia) : null,
+        gastosPrendarios: body.gastosPrendarios !== null && body.gastosPrendarios !== undefined ? parseFloat(body.gastosPrendarios) : null,
+        confirmado: body.confirmado === true,
+        
         total: parseFloat(body.total),
         saldoPendiente: parseFloat(body.saldoPendiente),
         comprobante: generatedComprobante,
@@ -69,7 +74,8 @@ export async function POST(req: Request) {
     });
     
     return NextResponse.json(sale);
-  } catch {
+  } catch (error) {
+    console.error("Error creating sale:", error);
     return NextResponse.json({ error: "Failed to create sale" }, { status: 500 });
   }
 }

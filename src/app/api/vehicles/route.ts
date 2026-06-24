@@ -41,6 +41,7 @@ export async function POST(req: Request) {
         precioFactura: body.precioFactura ? parseFloat(body.precioFactura) : null,
         precioUSD: body.precioUSD ? parseFloat(body.precioUSD) : null,
         condicion: body.condicion || null,
+        combustible: body.combustible || null,
         fotos: body.fotos || [],
       },
     });
@@ -54,7 +55,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(vehicle);
-  } catch {
+  } catch (error) {
+    console.error("Error creating vehicle:", error);
     return NextResponse.json({ error: "Failed to create vehicle" }, { status: 500 });
   }
 }

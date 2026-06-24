@@ -27,6 +27,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (updateData.porcentajeQuebranto !== undefined && updateData.porcentajeQuebranto !== null) updateData.porcentajeQuebranto = parseFloat(updateData.porcentajeQuebranto);
     if (updateData.quebranto !== undefined && updateData.quebranto !== null) updateData.quebranto = parseFloat(updateData.quebranto);
     if (updateData.autoPartePago !== undefined && updateData.autoPartePago !== null) updateData.autoPartePago = parseFloat(updateData.autoPartePago);
+    if (updateData.gastosPatente !== undefined && updateData.gastosPatente !== null) updateData.gastosPatente = parseFloat(updateData.gastosPatente);
+    if (updateData.gastosTransferencia !== undefined && updateData.gastosTransferencia !== null) updateData.gastosTransferencia = parseFloat(updateData.gastosTransferencia);
+    if (updateData.gastosPrendarios !== undefined && updateData.gastosPrendarios !== null) updateData.gastosPrendarios = parseFloat(updateData.gastosPrendarios);
 
     const sale = await prisma.operacion.update({
       where: { id },

@@ -141,7 +141,7 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
                     </div>
                     <div className="flex items-center gap-2">
                       <Fuel className="h-4 w-4 text-yellow-500/70" />
-                      <span>Nafta</span>
+                      <span>{vehiculo.combustible || "Nafta"}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Settings2 className="h-4 w-4 text-yellow-500/70" />
@@ -235,7 +235,7 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
                       <Fuel className="h-5 w-5 text-yellow-500" />
                       <div>
                         <p className="text-xs text-zinc-500">Combustible</p>
-                        <p className="font-semibold text-white">Nafta</p>
+                        <p className="font-semibold text-white">{selectedVehicle.combustible || "Nafta"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 bg-[#111] p-3 rounded-lg border border-[#222]">
