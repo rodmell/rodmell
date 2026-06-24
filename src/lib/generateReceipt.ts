@@ -84,10 +84,9 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor("#ffffff");
-    doc.text("Av. Libertador 1234, CABA", pageWidth - 15, 12, { align: "right" });
-    doc.text("Tel: +54 9 11 1234-5678", pageWidth - 15, 17, { align: "right" });
-    doc.text("contacto@rodmell.com.ar", pageWidth - 15, 22, { align: "right" });
-    doc.text("CUIT: 30-12345678-9", pageWidth - 15, 27, { align: "right" });
+    doc.text("Juan Felipe ibarra 136, Frias, Santiago del Estero", pageWidth - 15, 14, { align: "right" });
+    doc.text("Mail: rodmellautomotores@gmail.com", pageWidth - 15, 20, { align: "right" });
+    doc.text("CUIT: 20.31057572.1", pageWidth - 15, 26, { align: "right" });
 
     let decorY = 45;
 
