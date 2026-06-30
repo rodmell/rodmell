@@ -28,7 +28,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           username: user.username,
-          role: user.role
+          role: user.role,
+          ubicacion: user.ubicacion
         };
       }
     })
@@ -41,6 +42,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
         token.username = (user as { username?: string }).username;
+        token.ubicacion = (user as { ubicacion?: string }).ubicacion;
       }
       return token;
     },
@@ -49,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
         (session.user as { username?: string }).username = token.username as string;
+        (session.user as { ubicacion?: string }).ubicacion = token.ubicacion as string;
       }
       return session;
     }

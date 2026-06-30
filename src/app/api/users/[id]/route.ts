@@ -14,13 +14,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { name, username, password, role, phone } = body;
+    const { name, username, password, role, phone, ubicacion } = body;
 
     const dataToUpdate: Record<string, unknown> = {};
     if (name !== undefined) dataToUpdate.name = name;
     if (username !== undefined) dataToUpdate.username = username;
     if (role !== undefined) dataToUpdate.role = role;
     if (phone !== undefined) dataToUpdate.phone = phone;
+    if (ubicacion !== undefined) dataToUpdate.ubicacion = ubicacion;
     if (password && password.trim() !== "") {
       dataToUpdate.password = await bcrypt.hash(password, 10);
     }
@@ -28,7 +29,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const user = await prisma.user.update({
       where: { id },
       data: dataToUpdate,
-      select: { id: true, name: true, username: true, role: true, phone: true, createdAt: true },
+      select: { id: true, name: true, username: true, role: true, phone: true, ubicacion: true, createdAt: true },
     });
 
     await prisma.activityLog.create({

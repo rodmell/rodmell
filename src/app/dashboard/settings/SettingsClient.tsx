@@ -43,12 +43,12 @@ export default function SettingsClient({ users, logs: initialLogs }: { users: an
 
   // User forms
   const [formData, setFormData] = useState({
-    name: "", username: "", password: "", role: "SELLER", phone: "",
+    name: "", username: "", password: "", role: "SELLER", phone: "", ubicacion: "CASA_CENTRAL",
   });
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [editData, setEditData] = useState({
-    name: "", username: "", password: "", role: "SELLER", phone: "",
+    name: "", username: "", password: "", role: "SELLER", phone: "", ubicacion: "CASA_CENTRAL",
   });
 
   // Activity Logs Filters
@@ -93,7 +93,7 @@ export default function SettingsClient({ users, logs: initialLogs }: { users: an
       });
       if (res.ok) {
         setOpen(false);
-        setFormData({ name: "", username: "", password: "", role: "SELLER", phone: "" });
+        setFormData({ name: "", username: "", password: "", role: "SELLER", phone: "", ubicacion: "CASA_CENTRAL" });
         toast.success("Usuario creado correctamente");
         router.refresh();
       } else {
@@ -108,7 +108,7 @@ export default function SettingsClient({ users, logs: initialLogs }: { users: an
 
   const handleEdit = (u: any) => {
     setSelectedUser(u);
-    setEditData({ name: u.name, username: u.username, password: "", role: u.role, phone: u.phone || "" });
+    setEditData({ name: u.name, username: u.username, password: "", role: u.role, phone: u.phone || "", ubicacion: u.ubicacion || "CASA_CENTRAL" });
     setOpenEdit(true);
   };
 
@@ -361,6 +361,13 @@ const UserForm = ({ data, setData, onSubmit, submitLabel, loading }: any) => (
           <option value="SELLER" className="bg-[#111]">Vendedor</option>
           <option value="ADMIN" className="bg-[#111]">Administrador</option>
           <option value="MANAGER" className="bg-[#111]">Gerente</option>
+        </select>
+      </div>
+      <div className="space-y-2 col-span-2">
+        <label className="text-sm font-medium text-zinc-300">Ubicación Asignada</label>
+        <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white outline-none" value={data.ubicacion} onChange={e => setData({ ...data, ubicacion: e.target.value })}>
+          <option value="CASA_CENTRAL" className="bg-[#111]">Casa Central</option>
+          <option value="SUCURSAL_J_IBARRA" className="bg-[#111]">Sucursal J.Ibarra</option>
         </select>
       </div>
     </div>

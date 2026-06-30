@@ -3,7 +3,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 
-export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CUOTA" = "VENTA", item?: any) => {
+export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CUOTA" = "VENTA", item?: any, userLocation?: string) => {
   // Inicializamos el documento A4
   const doc = new jsPDF({
     orientation: "portrait",
@@ -84,7 +84,13 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor("#ffffff");
-    doc.text("Juan Felipe ibarra 136, Frias, Santiago del Estero", pageWidth - 15, 14, { align: "right" });
+    
+    let address = "Las Heras y Gral Paz";
+    if (userLocation === "SUCURSAL_J_IBARRA") {
+      address = "Juan Felipe ibarra 136, Frias, Santiago del Estero";
+    }
+    
+    doc.text(address, pageWidth - 15, 14, { align: "right" });
     doc.text("Mail: rodmellautomotores@gmail.com", pageWidth - 15, 20, { align: "right" });
     doc.text("CUIT: 20.31057572.1", pageWidth - 15, 26, { align: "right" });
 

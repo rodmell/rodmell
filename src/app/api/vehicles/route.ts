@@ -44,6 +44,7 @@ export async function POST(req: Request) {
         combustible: body.combustible || null,
         transmision: body.transmision || null,
         destacado: body.destacado === true,
+        ubicacion: body.ubicacion || "CASA_CENTRAL",
         fotos: body.fotos || [],
       },
     });

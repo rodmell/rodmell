@@ -15,6 +15,7 @@ export async function GET() {
         username: true,
         role: true,
         phone: true,
+        ubicacion: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
         password: hashedPassword,
         role: body.role || "SELLER",
         phone: body.phone || null,
+        ubicacion: body.ubicacion || "CASA_CENTRAL",
       },
     });
 

@@ -58,12 +58,18 @@ enum TipoDocumento {
   OTRO
 }
 
+enum Ubicacion {
+  CASA_CENTRAL
+  SUCURSAL_J_IBARRA
+}
+
 model User {
   id            String      @id @default(cuid())
   name          String
   username      String      @unique
   password      String
   role          Role        @default(SELLER)
+  ubicacion     Ubicacion   @default(CASA_CENTRAL)
   phone         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -109,6 +115,7 @@ model Vehiculo {
   destacado    Boolean        @default(false)
   descripcion  String?
   estado       EstadoVehiculo @default(DISPONIBLE)
+  ubicacion    Ubicacion      @default(CASA_CENTRAL)
   fotos        String[]       // Array of image URLs
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt

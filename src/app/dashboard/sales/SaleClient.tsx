@@ -334,7 +334,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
   const handleDownloadPDF = async (sale: any) => {
     // Dynamic import to avoid SSR issues with window/document
     const { generateReceiptPDF } = await import('@/lib/generateReceipt');
-    generateReceiptPDF(sale);
+    generateReceiptPDF(sale, "VENTA", null, session?.user?.ubicacion);
   };
 
   return (

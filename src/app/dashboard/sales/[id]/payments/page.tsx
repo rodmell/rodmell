@@ -33,6 +33,7 @@ export default async function PaymentsPage({ params }: { params: Promise<{ id: s
     <PaymentClient 
       sale={sale} 
       totalRecaudado={totalRecaudado} 
+      session={session}
     />
   );
 }

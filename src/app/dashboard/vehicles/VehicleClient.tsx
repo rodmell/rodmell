@@ -28,6 +28,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("AUTO");
+  const [activeUbicacion, setActiveUbicacion] = useState("TODOS");
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [portadaUrl, setPortadaUrl] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
     transmision: "Manual",
     destacado: false,
     descripcion: "",
+    ubicacion: "CASA_CENTRAL",
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -140,7 +142,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
 
   const handleNew = () => {
     setEditingId(null);
-    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", transmision: "Manual", destacado: false, descripcion: "" });
+    setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", transmision: "Manual", destacado: false, descripcion: "", ubicacion: "CASA_CENTRAL" });
     setExistingPhotos([]);
     setPreviewUrls([]);
     setPortadaUrl(null);
@@ -179,6 +181,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       transmision: v.transmision || "Manual",
       destacado: v.destacado || false,
       descripcion: v.descripcion || "",
+      ubicacion: v.ubicacion || "CASA_CENTRAL",
     });
     setExistingPhotos(v.fotos || []);
     setPortadaUrl(v.fotos && v.fotos.length > 0 ? v.fotos[0] : null);
@@ -294,7 +297,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
         setExistingPhotos([]);
         setPreviewUrls([]);
         setPortadaUrl(null);
-        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", transmision: "Manual", destacado: false, descripcion: "" });
+        setFormData({ tipo: "AUTO", marca: "", modelo: "", anio: "", dominio: "", chasis: "", color: "", kilometros: "", precioVenta: "", precioCosto: "", precioFactura: "", precioUSD: "", condicion: "Por ingresar", combustible: "Nafta", transmision: "Manual", destacado: false, descripcion: "", ubicacion: "CASA_CENTRAL" });
         setFiles([]);
         router.refresh();
       }
@@ -337,6 +340,17 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                   >
                     <option value="AUTO">Automóvil / Camioneta</option>
                     <option value="MOTO">Motocicleta</option>
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <label className="text-sm font-medium text-zinc-300">Ubicación</label>
+                  <select 
+                    className="w-full bg-[#111] border border-[#333] rounded-md h-10 px-3 text-sm text-white focus:outline-none focus:border-yellow-500"
+                    value={formData.ubicacion}
+                    onChange={e => setFormData({...formData, ubicacion: e.target.value})}
+                  >
+                    <option value="CASA_CENTRAL">Casa Central</option>
+                    <option value="SUCURSAL_J_IBARRA">Sucursal J.Ibarra</option>
                   </select>
                 </div>
                 <div className="space-y-2 col-span-2 sm:col-span-1">
@@ -496,19 +510,41 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
-          <button 
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'AUTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
-            onClick={() => setActiveTab('AUTO')}
-          >
-            Autos
-          </button>
-          <button 
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'MOTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
-            onClick={() => setActiveTab('MOTO')}
-          >
-            Motos
-          </button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
+            <button 
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'AUTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setActiveTab('AUTO')}
+            >
+              Autos
+            </button>
+            <button 
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'MOTO' ? 'bg-yellow-500 text-black' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setActiveTab('MOTO')}
+            >
+              Motos
+            </button>
+          </div>
+          <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
+            <button 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeUbicacion === 'TODOS' ? 'bg-[#333] text-white' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setActiveUbicacion('TODOS')}
+            >
+              Todas
+            </button>
+            <button 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeUbicacion === 'CASA_CENTRAL' ? 'bg-[#333] text-white' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setActiveUbicacion('CASA_CENTRAL')}
+            >
+              Casa Central
+            </button>
+            <button 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeUbicacion === 'SUCURSAL_J_IBARRA' ? 'bg-[#333] text-white' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setActiveUbicacion('SUCURSAL_J_IBARRA')}
+            >
+              Sucursal J.Ibarra
+            </button>
+          </div>
         </div>
 
         <div className="relative w-full sm:w-64">
@@ -535,22 +571,25 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
               <TableHead className="text-zinc-400 text-right">USD</TableHead>
               <TableHead className="text-zinc-400 text-right">Total Venta</TableHead>
               <TableHead className="text-zinc-400">Condición</TableHead>
+              <TableHead className="text-zinc-400">Ubicación</TableHead>
               <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {vehicles.filter(v => 
               (v.tipo || "AUTO") === activeTab &&
+              (activeUbicacion === "TODOS" || (v.ubicacion || "CASA_CENTRAL") === activeUbicacion) &&
               `${v.marca} ${v.modelo} ${v.dominio}`.toLowerCase().includes(searchTerm.toLowerCase())
             ).length === 0 ? (
               <TableRow className="border-[#222] hover:bg-transparent">
-                <TableCell colSpan={9} className="text-center py-8 text-zinc-500">
+                <TableCell colSpan={10} className="text-center py-8 text-zinc-500">
                   No hay vehículos registrados en esta categoría
                 </TableCell>
               </TableRow>
             ) : (
               vehicles.filter(v => 
                 (v.tipo || "AUTO") === activeTab &&
+                (activeUbicacion === "TODOS" || (v.ubicacion || "CASA_CENTRAL") === activeUbicacion) &&
                 `${v.marca} ${v.modelo} ${v.dominio}`.toLowerCase().includes(searchTerm.toLowerCase())
               ).map((v) => (
                 <TableRow key={v.id} className="border-[#222] hover:bg-[#111]">
@@ -571,6 +610,7 @@ export default function VehicleClient({ vehicles }: { vehicles: any[] }) {
                   <TableCell className="text-right text-green-500 font-medium">{v.precioUSD ? `US$ ${v.precioUSD.toLocaleString()}` : '-'}</TableCell>
                   <TableCell className="text-right text-yellow-500 font-bold">${v.precioVenta.toLocaleString()}</TableCell>
                   <TableCell className="text-zinc-400 text-sm">{v.condicion || '-'}</TableCell>
+                  <TableCell className="text-zinc-400 text-sm">{v.ubicacion === 'SUCURSAL_J_IBARRA' ? 'Suc. J.Ibarra' : 'Casa Central'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => handleEdit(v)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors">

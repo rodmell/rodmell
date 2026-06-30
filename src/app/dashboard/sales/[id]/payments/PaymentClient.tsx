@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-export default function PaymentClient({ sale, totalRecaudado }: { sale: any, totalRecaudado: number }) {
+export default function PaymentClient({ sale, totalRecaudado, session }: { sale: any, totalRecaudado: number, session?: any }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -173,12 +173,12 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
 
   const handleDownloadPagoReceipt = async (pago: any) => {
     const { generateReceiptPDF } = await import('@/lib/generateReceipt');
-    generateReceiptPDF(sale, "PAGO", pago);
+    generateReceiptPDF(sale, "PAGO", pago, session?.user?.ubicacion);
   };
 
   const handleDownloadCuotaReceipt = async (cuota: any) => {
     const { generateReceiptPDF } = await import('@/lib/generateReceipt');
-    generateReceiptPDF(sale, "CUOTA", cuota);
+    generateReceiptPDF(sale, "CUOTA", cuota, session?.user?.ubicacion);
   };
 
   const handleUpdatePago = async (e: React.FormEvent) => {
