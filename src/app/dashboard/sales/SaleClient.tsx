@@ -167,7 +167,7 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     // Pagos
     const pagoEfectivo = formData.hasEfectivo ? parseThousands(formData.efectivo) : 0;
     const pagoAuto = formData.hasAuto ? parseThousands(formData.autoPartePago) : 0;
-    const totalPagado = pagoEfectivo + credito + pagoAuto;
+    const totalPagado = pagoEfectivo + pagoAuto;
 
     // Saldo Pendiente
     const calculadoSaldo = calculadoTotal - totalPagado;

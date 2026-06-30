@@ -242,6 +242,23 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
     setLoading(false);
   };
 
+  const handleDeleteCuota = async (cuotaId: string) => {
+    if (!confirm("¿Estás seguro de eliminar esta cuota? El saldo pendiente se actualizará automáticamente.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/installments/${cuotaId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Cuota eliminada correctamente");
+        router.refresh();
+      } else {
+        toast.error("Error al eliminar la cuota");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -281,7 +298,7 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
             <Clock className="w-24 h-24 text-red-500" />
           </div>
           <p className="text-zinc-400 font-medium mb-1">Saldo Pendiente</p>
-          <p className="text-3xl font-bold text-red-500">${sale.saldoPendiente.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-red-500">${(sale.total - totalRecaudado).toLocaleString()}</p>
         </div>
       </div>
 
@@ -522,6 +539,9 @@ export default function PaymentClient({ sale, totalRecaudado }: { sale: any, tot
                           </button>
                         </>
                       )}
+                      <button onClick={() => handleDeleteCuota(cuota.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar Cuota">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}

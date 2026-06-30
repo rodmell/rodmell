@@ -163,15 +163,15 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#0a0a0a] border-[#222] text-white w-[95vw] sm:max-w-4xl lg:max-w-5xl p-0 overflow-hidden" showCloseButton={false}>
           {selectedVehicle && (
-            <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+            <div className="flex flex-col md:flex-row w-full max-h-[90vh] overflow-y-auto">
               {/* Left Column: Image Gallery */}
-              <div className="w-full md:w-3/5 bg-[#050505] flex flex-col relative">
+              <div className="w-full md:w-3/5 bg-[#050505] flex flex-col relative min-h-[40vh] md:min-h-0">
                 <button onClick={() => setOpen(false)} className="absolute top-4 left-4 z-20 md:hidden bg-black/50 p-2 rounded-full text-white hover:bg-black/80 transition">
                   <X className="w-5 h-5" />
                 </button>
                 
-                <div className="relative flex-1 min-h-[300px] md:min-h-0 bg-black flex items-center justify-center">
-                  <img src={mainImage} alt="Main" className="object-contain w-full h-full max-h-[500px]" />
+                <div className="relative flex-1 bg-black w-full flex items-center justify-center">
+                  <img src={mainImage} alt="Main" className="object-contain w-full h-full max-h-[400px] md:max-h-[500px]" />
                 </div>
                 
                 {selectedVehicle.fotos && selectedVehicle.fotos.length > 1 && (
