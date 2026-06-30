@@ -163,19 +163,19 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#0a0a0a] border-[#222] text-white w-[95vw] sm:max-w-4xl lg:max-w-5xl p-0 overflow-hidden" showCloseButton={false}>
           {selectedVehicle && (
-            <div className="flex flex-col md:flex-row w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex flex-col md:flex-row w-full max-h-[90vh] md:h-[90vh] overflow-y-auto md:overflow-y-hidden">
               {/* Left Column: Image Gallery */}
-              <div className="w-full md:w-3/5 bg-[#050505] flex flex-col relative min-h-[40vh] md:min-h-0">
+              <div className="w-full md:w-3/5 bg-[#050505] flex flex-col relative shrink-0 md:h-full">
                 <button onClick={() => setOpen(false)} className="absolute top-4 left-4 z-20 md:hidden bg-black/50 p-2 rounded-full text-white hover:bg-black/80 transition">
                   <X className="w-5 h-5" />
                 </button>
                 
-                <div className="relative flex-1 bg-black w-full flex items-center justify-center">
-                  <img src={mainImage} alt="Main" className="object-contain w-full h-full max-h-[400px] md:max-h-[500px]" />
+                <div className="relative flex-1 bg-black w-full flex items-center justify-center min-h-[40vh] md:min-h-0">
+                  <img src={mainImage} alt="Main" className="object-contain w-full h-full max-h-[400px] md:max-h-full" />
                 </div>
                 
                 {selectedVehicle.fotos && selectedVehicle.fotos.length > 1 && (
-                  <div className="h-24 bg-[#111] border-t border-[#222] p-2 flex gap-2 overflow-x-auto">
+                  <div className="h-24 shrink-0 bg-[#111] border-t border-[#222] p-2 flex gap-2 overflow-x-auto">
                     {selectedVehicle.fotos.map((foto: string, i: number) => (
                       <button 
                         key={i} 
@@ -190,8 +190,8 @@ export default function CatalogoClient({ vehiclesData }: { vehiclesData: any[] }
               </div>
 
               {/* Right Column: Info & CTA */}
-              <div className="w-full md:w-2/5 flex flex-col h-full bg-[#0a0a0a] border-l border-[#222] overflow-y-auto">
-                <div className="p-6 flex-1 flex flex-col">
+              <div className="w-full md:w-2/5 flex flex-col bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-[#222] md:h-full md:overflow-y-auto">
+                <div className="p-6 flex-1 flex flex-col shrink-0">
                   <div className="flex justify-between items-start mb-4 hidden md:flex">
                     <DialogTitle className="sr-only">{selectedVehicle.marca} {selectedVehicle.modelo}</DialogTitle>
                     <div />
