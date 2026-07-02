@@ -60,7 +60,7 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Línea Directa</h3>
-                  <p className="text-zinc-400">3513843463<br/>Lunes a viernes de 9.00 a 13.30 y de 17.30 a 21.00<br/>Sábados 9 30 a 12.30</p>
+                  <p className="text-zinc-400">3513843463<br />Lunes a Viernes | 9hs-13:30hs & 17:30hs-21hs<br />Sábados 9:30hs a 12:30hs</p>
                 </div>
               </div>
               <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-[#222] flex items-start gap-4">
@@ -87,19 +87,19 @@ export default function ContactoPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-1">Nombre Completo</label>
-                    <input required type="text" className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="Ej: Juan Pérez" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    <input required type="text" className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="Ej: Juan Pérez" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-1">Correo Electrónico</label>
-                    <input required type="email" className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="juan@ejemplo.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                    <input required type="email" className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="juan@ejemplo.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-1">Teléfono</label>
-                    <input required type="text" className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="Ej: 11 1234-5678" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                    <input required type="text" className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="Ej: 11 1234-5678" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-1">Mensaje</label>
-                    <textarea required rows={4} className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="Estoy interesado en el vehículo..." value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})}></textarea>
+                    <textarea required rows={4} className="w-full bg-[#111] border border-[#333] rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors" placeholder="Estoy interesado en el vehículo..." value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })}></textarea>
                   </div>
                   <button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-8 rounded-md transition-all mt-4 disabled:opacity-50">
                     {loading ? "Enviando..." : "Enviar Mensaje"}
