@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import { Toaster } from "sonner";
+import { WhatsAppButton } from "@/components/public/WhatsAppButton";
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -32,6 +34,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <WhatsAppButton />
         <Toaster theme="dark" position="bottom-right" richColors />
       </body>
     </html>
