@@ -51,7 +51,7 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Showroom Principal</h3>
-                  <p className="text-zinc-400">Av. Libertador 1234, Ciudad de Buenos Aires<br/>Argentina</p>
+                  <p className="text-zinc-400">Juan Felipe ibarra 136, Frias, Santiago del Estero</p>
                 </div>
               </div>
               <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-[#222] flex items-start gap-4">
@@ -60,7 +60,7 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Línea Directa</h3>
-                  <p className="text-zinc-400">+54 11 4444-5555<br/>Lunes a Viernes de 9 a 19 hs.</p>
+                  <p className="text-zinc-400">3513843463<br/>Lunes a Viernes de 9 a 19 hs.</p>
                 </div>
               </div>
               <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-[#222] flex items-start gap-4">
@@ -69,7 +69,7 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Correo Electrónico</h3>
-                  <p className="text-zinc-400">ventas@rodmell.com<br/>info@rodmell.com</p>
+                  <p className="text-zinc-400">Rodmellautomotores@gmail.com</p>
                 </div>
               </div>
             </div>
