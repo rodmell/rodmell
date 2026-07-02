@@ -60,7 +60,7 @@ export default function ContactoPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Línea Directa</h3>
-                  <p className="text-zinc-400">3513843463<br/>Lunes a Viernes de 9 a 19 hs.</p>
+                  <p className="text-zinc-400">3513843463<br/>Lunes a viernes de 9.00 a 13.30 y de 17.30 a 21.00<br/>Sábados 9 30 a 12.30</p>
                 </div>
               </div>
               <div className="bg-[#0a0a0a] p-8 rounded-2xl border border-[#222] flex items-start gap-4">
