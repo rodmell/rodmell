@@ -94,7 +94,11 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
       {open && (
         <ul className="absolute z-50 w-full mt-1 max-h-60 overflow-auto bg-[#1a1a1a] border border-[#333] rounded-sm shadow-xl">
           {options
-            .filter((o: any) => o.label.toLowerCase().includes(search.toLowerCase()))
+            .filter((o: any) => {
+              const selectedLabel = options.find((opt: any) => opt.value === value)?.label || "";
+              if (search === selectedLabel) return true;
+              return o.label.toLowerCase().includes(search.toLowerCase());
+            })
             .map((o: any) => (
               <li
                 key={o.value}
@@ -104,8 +108,12 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
                 {o.label}
               </li>
             ))}
-          {options.filter((o: any) => o.label.toLowerCase().includes(search.toLowerCase())).length === 0 && (
-            <li className="px-3 py-2 text-sm text-zinc-500">No hay resultados</li>
+          {options.filter((o: any) => {
+            const selectedLabel = options.find((opt: any) => opt.value === value)?.label || "";
+            if (search === selectedLabel) return true;
+            return o.label.toLowerCase().includes(search.toLowerCase());
+          }).length === 0 && (
+            <li className="px-3 py-2 text-sm text-zinc-500 text-center">No hay resultados</li>
           )}
         </ul>
       )}
