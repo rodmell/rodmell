@@ -15,7 +15,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const body = await req.json();
     const { id } = await params;
 
-    const { id: _, createdAt, updatedAt, cliente, vehiculo, clienteId, vehiculoId, vendedorId, ...updateData } = body;
+    const { id: _, createdAt, updatedAt, cliente, vehiculo, clienteId, vehiculoId, vendedorId, cobradoEnElActo, ...updateData } = body;
 
     // Convert strings to floats where necessary
     if (updateData.precioVehiculo !== undefined) updateData.precioVehiculo = parseFloat(updateData.precioVehiculo);
