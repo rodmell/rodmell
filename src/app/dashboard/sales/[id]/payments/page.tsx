@@ -17,7 +17,12 @@ export default async function PaymentsPage({ params }: { params: Promise<{ id: s
       vehiculo: true,
       pagos: { orderBy: { fecha: "desc" } },
       cuotas: { orderBy: { numeroCuota: "asc" } },
+      servicios: { orderBy: { fecha: "desc" } },
     }
+  });
+
+  const catalogServices = await prisma.catalogoServicio.findMany({
+    orderBy: { tipo: "asc" },
   });
 
   if (!sale) {
@@ -34,6 +39,7 @@ export default async function PaymentsPage({ params }: { params: Promise<{ id: s
       sale={sale} 
       totalRecaudado={totalRecaudado} 
       session={session}
+      catalogServices={catalogServices}
     />
   );
 }

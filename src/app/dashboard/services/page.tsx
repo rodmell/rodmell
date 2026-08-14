@@ -10,7 +10,7 @@ export default async function ServicesPage() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) redirect("/login");
 
-  const [servicios, clientes, operaciones] = await Promise.all([
+  const [servicios, clientes, operaciones, catalogServices] = await Promise.all([
     prisma.servicio.findMany({
       include: {
         cliente: true,
@@ -23,6 +23,7 @@ export default async function ServicesPage() {
       include: { vehiculo: true, cliente: true },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.catalogoServicio.findMany({ orderBy: { tipo: "asc" } }),
   ]);
 
   return (
@@ -30,6 +31,7 @@ export default async function ServicesPage() {
       servicios={servicios}
       clientes={clientes}
       operaciones={operaciones}
+      catalogServices={catalogServices}
     />
   );
 }

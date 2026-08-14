@@ -14,6 +14,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -234,6 +235,11 @@ export default function CreditsClient({
     else alert("Error al marcar cuota");
   };
 
+  const handleExportPDF = async () => {
+    const { generateCreditsPDF } = await import("@/lib/generateCreditsPDF");
+    generateCreditsPDF(filtro, operacionesConCuotas, creditosHistoricos);
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -311,6 +317,13 @@ export default function CreditsClient({
             </button>
           ))}
         </div>
+        <Button
+          onClick={handleExportPDF}
+          className="bg-[#222] hover:bg-[#333] text-white border border-[#444]"
+          title="Exportar a PDF con el filtro actual"
+        >
+          <FileText className="w-4 h-4 mr-2" /> Exportar PDF
+        </Button>
       </div>
 
       {/* ── Créditos del Sistema (Operaciones con Cuotas) ── */}

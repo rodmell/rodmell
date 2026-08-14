@@ -4,9 +4,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText, Edit, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Wallet, CheckCircle2, Clock, XCircle, Plus, Calendar, DollarSign, FileText, Edit, Search, Trash2, Wrench, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -15,14 +16,27 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { formatThousands, parseThousands } from "@/lib/utils";
 
-export default function PaymentClient({ sale, totalRecaudado, session }: { sale: any, totalRecaudado: number, session?: any }) {
+const TIPO_LABELS: Record<string, string> = {
+  ACCESORIO: "🔧 Accesorio",
+  POLARIZADO: "🪟 Polarizado",
+  GNC: "⛽ GNC",
+  ALARMA: "🔔 Alarma",
+  SERVICE: "🛠 Service",
+  OTROS: "📦 Otros",
+};
+
+export default function PaymentClient({ sale, totalRecaudado, session, catalogServices }: { sale: any, totalRecaudado: number, session?: any, catalogServices?: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   // States for Modals
   const [openPago, setOpenPago] = useState(false);
   const [openCuotas, setOpenCuotas] = useState(false);
+  const [openService, setOpenService] = useState(false);
+
+  const [serviceData, setServiceData] = useState({ tipo: "ACCESORIO", descripcion: "", monto: "", pagado: false });
 
   const [pagoData, setPagoData] = useState({ importe: "", medioPago: "EFECTIVO", observaciones: "", file: null as File | null });
   const [cuotaData, setCuotaData] = useState({ cantidad: "12", valor: "", fechaInicio: new Date().toISOString().split("T")[0] });
@@ -78,6 +92,67 @@ export default function PaymentClient({ sale, totalRecaudado, session }: { sale:
       toast.error("Error de conexión");
     }
     setLoading(false);
+  };
+
+  const handleAddService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clienteId: sale.clienteId,
+          operacionId: sale.id,
+          tipo: serviceData.tipo,
+          descripcion: serviceData.descripcion,
+          monto: parseThousands(serviceData.monto),
+          pagado: serviceData.pagado,
+          fecha: new Date().toISOString().split("T")[0],
+        }),
+      });
+      if (res.ok) {
+        setOpenService(false);
+        setServiceData({ tipo: "ACCESORIO", descripcion: "", monto: "", pagado: false });
+        toast.success("Servicio añadido correctamente");
+        router.refresh();
+      } else {
+        toast.error("Error al registrar servicio");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteService = async (serviceId: string) => {
+    if (!confirm("¿Estás seguro de eliminar este servicio?")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/services/${serviceId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Servicio eliminado");
+        router.refresh();
+      } else {
+        toast.error("Error al eliminar servicio");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
+    setLoading(false);
+  };
+
+  const handleToggleServicePago = async (sv: any) => {
+    try {
+      const res = await fetch(`/api/services/${sv.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pagado: !sv.pagado }),
+      });
+      if (res.ok) router.refresh();
+    } catch {
+      toast.error("Error al cambiar estado");
+    }
   };
 
   const handleGenerateCuotas = async (e: React.FormEvent) => {
@@ -593,6 +668,138 @@ export default function PaymentClient({ sale, totalRecaudado, session }: { sale:
           </div>
         </div>
 
+      </div>
+
+      {/* Servicios y Agregados */}
+      <div className="bg-[#0a0a0a] border border-[#222] rounded-2xl overflow-hidden flex flex-col mt-6">
+        <div className="p-6 border-b border-[#222] flex justify-between items-center bg-gradient-to-r from-[#111] to-transparent">
+          <div>
+            <h3 className="text-xl font-bold text-white">Servicios & Agregados</h3>
+            <p className="text-zinc-500 text-sm mt-1">Accesorios, gestoría, service, polarizados, etc.</p>
+          </div>
+          
+          <Dialog open={openService} onOpenChange={setOpenService}>
+            <Button 
+              onClick={() => {
+                setServiceData({ tipo: "ACCESORIO", descripcion: "", monto: "", pagado: false });
+                setOpenService(true);
+              }}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-9 px-4 py-2 bg-[#222] hover:bg-[#333] text-white border border-[#444]"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Añadir Servicio
+            </Button>
+            <DialogContent className="bg-[#0a0a0a] border-[#222] text-white">
+              <DialogHeader>
+                <DialogTitle>Registrar Servicio / Agregado</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddService} className="space-y-4 mt-4">
+                {catalogServices && catalogServices.length > 0 && (
+                  <div className="space-y-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <Label className="text-yellow-500 text-sm font-semibold">Cargar desde Catálogo (Opcional)</Label>
+                    <div className="relative">
+                      <select
+                        className="w-full bg-[#111] border border-yellow-500/30 text-white rounded-sm px-3 py-2 text-sm appearance-none"
+                        onChange={(e) => {
+                          if (!e.target.value) return;
+                          const selected = catalogServices.find((c: any) => c.id === e.target.value);
+                          if (selected) {
+                            setServiceData((p) => ({
+                              ...p,
+                              tipo: selected.tipo,
+                              descripcion: selected.descripcion,
+                              monto: formatThousands(selected.monto),
+                            }));
+                          }
+                        }}
+                      >
+                        <option value="">— Elegir producto/servicio —</option>
+                        {catalogServices.map((c: any) => (
+                          <option key={c.id} value={c.id}>
+                            {TIPO_LABELS[c.tipo] || c.tipo} | {c.descripcion} (${c.monto.toLocaleString("es-AR")})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Tipo</label>
+                  <select required className="w-full bg-[#111] border border-[#333] rounded-md px-3 py-2 text-sm text-white" value={serviceData.tipo} onChange={e => setServiceData({...serviceData, tipo: e.target.value})}>
+                    {Object.entries(TIPO_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Descripción</label>
+                  <Input required className="bg-[#111] border-[#333]" placeholder="Ej: Polarizado intermedio" value={serviceData.descripcion} onChange={e => setServiceData({...serviceData, descripcion: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Monto</label>
+                  <Input required type="text" className="bg-[#111] border-[#333]" placeholder="0" value={serviceData.monto} onChange={e => setServiceData({...serviceData, monto: formatThousands(e.target.value)})} />
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setServiceData((p) => ({ ...p, pagado: !p.pagado }))}
+                    className={`w-10 h-6 rounded-full transition-colors ${serviceData.pagado ? "bg-green-500" : "bg-zinc-700"} relative`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${serviceData.pagado ? "left-5" : "left-1"}`} />
+                  </button>
+                  <Label className="text-zinc-300 text-sm cursor-pointer" onClick={() => setServiceData((p) => ({ ...p, pagado: !p.pagado }))}>
+                    {serviceData.pagado ? "Cobrado (Suma al recaudado)" : "Pendiente de cobro (Suma a la deuda)"}
+                  </Label>
+                </div>
+                <Button type="submit" disabled={loading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black mt-6">
+                  {loading ? "Guardando..." : "Guardar Servicio"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="p-0 flex-1">
+          {!sale.servicios || sale.servicios.length === 0 ? (
+            <div className="p-8 text-center text-zinc-500">No hay servicios o agregados vinculados a esta venta.</div>
+          ) : (
+            <div className="divide-y divide-[#222]">
+              {sale.servicios.map((sv: any) => (
+                <div key={sv.id} className="p-4 flex items-center justify-between hover:bg-[#111] transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#222] border border-[#333] flex items-center justify-center">
+                      <Wrench className="w-4 h-4 text-zinc-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{TIPO_LABELS[sv.tipo] || sv.tipo}</p>
+                      <p className="text-zinc-400 text-sm">{sv.descripcion}</p>
+                      <p className="text-zinc-500 text-xs mt-0.5">{new Date(sv.fecha).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <span className="text-white font-bold">${sv.monto.toLocaleString()}</span>
+                    <button 
+                      onClick={() => handleToggleServicePago(sv)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                        sv.pagado 
+                          ? "text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20" 
+                          : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20"
+                      }`}
+                    >
+                      {sv.pagado ? "Cobrado" : "Pendiente"}
+                    </button>
+                    
+                    <button onClick={() => handleDeleteService(sv.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar Servicio">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <Dialog open={openCuotaPay} onOpenChange={setOpenCuotaPay}>

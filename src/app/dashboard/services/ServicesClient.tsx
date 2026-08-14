@@ -13,7 +13,9 @@ import {
   Clock,
   DollarSign,
   ChevronDown,
+  Settings,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,10 +121,12 @@ export default function ServicesClient({
   servicios,
   clientes,
   operaciones,
+  catalogServices,
 }: {
   servicios: any[];
   clientes: any[];
   operaciones: any[];
+  catalogServices: any[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -222,12 +226,20 @@ export default function ServicesClient({
           </h1>
           <p className="text-zinc-400 mt-1">Accesorios, polarizados, GNC, alarmas y más.</p>
         </div>
-        <Button
-          onClick={handleNew}
-          className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-sm px-4 py-2"
-        >
-          <Plus className="w-4 h-4" /> Nuevo Servicio
-        </Button>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/services/catalog"
+            className="inline-flex items-center gap-2 bg-[#111] hover:bg-[#222] text-zinc-300 font-semibold rounded-sm px-4 py-2 border border-[#333] transition-colors"
+          >
+            <Settings className="w-4 h-4" /> Administrar P&S
+          </Link>
+          <Button
+            onClick={handleNew}
+            className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-sm px-4 py-2"
+          >
+            <Plus className="w-4 h-4" /> Nuevo Servicio
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -367,10 +379,43 @@ export default function ServicesClient({
               <SearchableSelect
                 placeholder="Buscá el cliente..."
                 value={form.clienteId}
-                onChange={(val: string) => setForm((p) => ({ ...p, clienteId: val }))}
+                onChange={(val: string) => {
+                  setForm((p) => ({ ...p, clienteId: val, operacionId: "" })); // Reset operacion on client change
+                }}
                 options={clientes.map((c: any) => ({ value: c.id, label: `${c.nombreCompleto} (DNI: ${c.dni || "-"})` }))}
               />
             </div>
+
+            {!editingId && catalogServices && catalogServices.length > 0 && (
+              <div className="space-y-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <Label className="text-yellow-500 text-sm font-semibold">Cargar desde Catálogo (Opcional)</Label>
+                <div className="relative">
+                  <select
+                    className="w-full bg-[#111] border border-yellow-500/30 text-white rounded-sm px-3 py-2 text-sm appearance-none"
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const selected = catalogServices.find((c: any) => c.id === e.target.value);
+                      if (selected) {
+                        setForm((p) => ({
+                          ...p,
+                          tipo: selected.tipo,
+                          descripcion: selected.descripcion,
+                          monto: formatThousands(selected.monto),
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">— Elegir producto/servicio —</option>
+                    {catalogServices.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {TIPO_LABELS[c.tipo] || c.tipo} | {c.descripcion} (${c.monto.toLocaleString("es-AR")})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500 pointer-events-none" />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label className="text-zinc-300 text-sm">Tipo de Servicio *</Label>
@@ -426,15 +471,17 @@ export default function ServicesClient({
             <div className="space-y-2">
               <Label className="text-zinc-300 text-sm">Venta Vinculada (opcional)</Label>
               <SearchableSelect
-                placeholder="Vinculá a una venta existente..."
+                placeholder={!form.clienteId ? "Primero seleccioná un cliente" : "Vinculá a una venta existente..."}
                 value={form.operacionId}
                 onChange={(val: string) => setForm((p) => ({ ...p, operacionId: val }))}
                 options={[
                   { value: "", label: "— Sin vincular —" },
-                  ...operaciones.map((op: any) => ({
-                    value: op.id,
-                    label: `${op.cliente?.nombreCompleto} — ${op.vehiculo?.marca} ${op.vehiculo?.modelo} (${new Date(op.createdAt).toLocaleDateString("es-AR")})`,
-                  })),
+                  ...operaciones
+                    .filter((op: any) => op.clienteId === form.clienteId)
+                    .map((op: any) => ({
+                      value: op.id,
+                      label: `${op.vehiculo?.marca} ${op.vehiculo?.modelo} (${new Date(op.createdAt).toLocaleDateString("es-AR")})`,
+                    })),
                 ]}
               />
             </div>
