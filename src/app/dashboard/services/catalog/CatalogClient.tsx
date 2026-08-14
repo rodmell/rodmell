@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatThousands, parseThousands } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const TIPOS_SERVICIO = [
   { value: "ACCESORIO", label: "🔧 Accesorio" },
@@ -62,6 +63,7 @@ export default function CatalogClient({ catalog }: { catalog: any[] }) {
   const [search, setSearch] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
 
@@ -114,7 +116,6 @@ export default function CatalogClient({ catalog }: { catalog: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este producto/servicio del catálogo?")) return;
     const res = await fetch(`/api/catalog-services/${id}`, { method: "DELETE" });
     if (res.ok) router.refresh();
     else alert("Error al eliminar");
@@ -194,7 +195,7 @@ export default function CatalogClient({ catalog }: { catalog: any[] }) {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => setItemToDelete(item.id)}
                         className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
                         title="Eliminar"
                       >
@@ -272,6 +273,16 @@ export default function CatalogClient({ catalog }: { catalog: any[] }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+        title="Eliminar del catálogo"
+        description="¿Estás seguro de eliminar este producto/servicio del catálogo? Esta acción no se puede deshacer."
+        onConfirm={() => {
+          if (itemToDelete) handleDelete(itemToDelete);
+        }}
+      />
     </div>
   );
 }

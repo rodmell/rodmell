@@ -6,6 +6,214 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  username     String        @unique
+  password     String
+  role         Role          @default(SELLER)
+  phone        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ubicacion    Ubicacion     @default(CASA_CENTRAL)
+  activityLogs ActivityLog[]
+  operaciones  Operacion[]
+}
+
+model Cliente {
+  id                 String             @id @default(cuid())
+  nombreCompleto     String
+  dni                String?
+  cuil               String?
+  estadoCivil        String?
+  conyuge            String?
+  direccion          String?
+  telefono           String?
+  email              String?
+  observaciones      String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  creditosHistoricos CreditoHistorico[]
+  documentos         Documento[]
+  operaciones        Operacion[]
+  servicios          Servicio[]
+}
+
+model Vehiculo {
+  id            String         @id @default(cuid())
+  tipo          TipoVehiculo   @default(AUTO)
+  marca         String
+  modelo        String
+  anio          Int
+  dominio       String
+  chasis        String?
+  color         String?
+  kilometros    Int?
+  precioVenta   Float
+  precioCosto   Float?
+  precioFactura Float?
+  precioUSD     Float?
+  condicion     String?
+  descripcion   String?
+  estado        EstadoVehiculo @default(DISPONIBLE)
+  fotos         String[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  combustible   String?
+  destacado     Boolean        @default(false)
+  transmision   String?
+  ubicacion     Ubicacion      @default(CASA_CENTRAL)
+  documentos    Documento[]
+  operaciones   Operacion[]
+}
+
+model Operacion {
+  id                   String      @id @default(cuid())
+  clienteId            String
+  vehiculoId           String
+  vendedorId           String
+  precioVehiculo       Float
+  formaPago            String?
+  efectivo             Float?
+  credito              Float?
+  autoPartePago        Float?
+  detalleAutoPartePago String?
+  porcentajeQuebranto  Float?
+  gastosInscripcion    Float?
+  gastosPrenda         Float?
+  accesorios           Float?
+  quebranto            Float?
+  observaciones        String?
+  total                Float
+  saldoPendiente       Float
+  comprobante          String?     @unique
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  confirmado           Boolean     @default(false)
+  gastosPatente        Float?
+  gastosPrendarios     Float?
+  gastosTransferencia  Float?
+  cuotas               Cuota[]
+  documentos           Documento[]
+  gastos               Gasto[]
+  cliente              Cliente     @relation(fields: [clienteId], references: [id])
+  vehiculo             Vehiculo    @relation(fields: [vehiculoId], references: [id])
+  vendedor             User        @relation(fields: [vendedorId], references: [id])
+  pagos                Pago[]
+  servicios            Servicio[]
+}
+
+model Pago {
+  id             String    @id @default(cuid())
+  operacionId    String
+  fecha          DateTime
+  importe        Float
+  medioPago      MedioPago
+  observaciones  String?
+  comprobante    String?   @unique
+  comprobanteUrl String?
+  operacion      Operacion @relation(fields: [operacionId], references: [id])
+}
+
+model Cuota {
+  id               String      @id @default(cuid())
+  operacionId      String
+  numeroCuota      Int
+  valor            Float
+  fechaVencimiento DateTime
+  estado           EstadoCuota @default(PENDIENTE)
+  medioPago        MedioPago?
+  fechaPago        DateTime?
+  comprobante      String?     @unique
+  comprobanteUrl   String?
+  operacion        Operacion   @relation(fields: [operacionId], references: [id])
+}
+
+model Gasto {
+  id          String        @id @default(cuid())
+  operacionId String
+  concepto    ConceptoGasto
+  monto       Float
+  fecha       DateTime
+  operacion   Operacion     @relation(fields: [operacionId], references: [id])
+}
+
+model Documento {
+  id            String        @id @default(cuid())
+  operacionId   String?
+  clienteId     String?
+  vehiculoId    String?
+  tipo          TipoDocumento
+  url           String
+  nombreArchivo String
+  observaciones String?
+  cliente       Cliente?      @relation(fields: [clienteId], references: [id])
+  operacion     Operacion?    @relation(fields: [operacionId], references: [id])
+  vehiculo      Vehiculo?     @relation(fields: [vehiculoId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model CreditoHistorico {
+  id              String           @id @default(cuid())
+  clienteId       String
+  descripcion     String
+  totalFinanciado Float
+  cantidadCuotas  Int
+  valorCuota      Float
+  intereses       Float?           @default(0)
+  fechaInicio     DateTime
+  observaciones   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  cliente         Cliente          @relation(fields: [clienteId], references: [id])
+  cuotas          CuotaHistorica[]
+}
+
+model CuotaHistorica {
+  id               String           @id @default(cuid())
+  creditoId        String
+  numeroCuota      Int
+  valor            Float
+  fechaVencimiento DateTime
+  estado           EstadoCuota      @default(PENDIENTE)
+  fechaPago        DateTime?
+  montoPagado      Float?
+  credito          CreditoHistorico @relation(fields: [creditoId], references: [id])
+}
+
+model CatalogoServicio {
+  id          String       @id @default(cuid())
+  tipo        TipoServicio
+  descripcion String
+  monto       Float
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Servicio {
+  id            String       @id @default(cuid())
+  clienteId     String
+  operacionId   String?
+  tipo          TipoServicio
+  descripcion   String
+  monto         Float
+  pagado        Boolean      @default(false)
+  fecha         DateTime     @default(now())
+  observaciones String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  cliente       Cliente      @relation(fields: [clienteId], references: [id])
+  operacion     Operacion?   @relation(fields: [operacionId], references: [id])
+}
+
 enum Role {
   ADMIN
   MANAGER
@@ -70,228 +278,4 @@ enum TipoServicio {
   ALARMA
   SERVICE
   OTROS
-}
-
-model User {
-  id            String      @id @default(cuid())
-  name          String
-  username      String      @unique
-  password      String
-  role          Role        @default(SELLER)
-  ubicacion     Ubicacion   @default(CASA_CENTRAL)
-  phone         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  operaciones   Operacion[]
-  activityLogs  ActivityLog[]
-}
-
-model Cliente {
-  id             String      @id @default(cuid())
-  nombreCompleto String
-  dni            String?
-  cuil           String?
-  estadoCivil    String?
-  conyuge        String?
-  direccion      String?
-  telefono       String?
-  email          String?
-  observaciones  String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  operaciones         Operacion[]
-  documentos          Documento[]
-  creditosHistoricos  CreditoHistorico[]
-  servicios           Servicio[]
-}
-
-model Vehiculo {
-  id           String         @id @default(cuid())
-  tipo         TipoVehiculo   @default(AUTO)
-  marca        String
-  modelo       String
-  anio         Int
-  dominio      String
-  chasis       String?
-  color        String?
-  kilometros   Int?
-  precioVenta  Float
-  precioCosto  Float?
-  precioFactura Float?
-  precioUSD    Float?
-  condicion    String?
-  combustible  String?
-  transmision  String?
-  destacado    Boolean        @default(false)
-  descripcion  String?
-  estado       EstadoVehiculo @default(DISPONIBLE)
-  ubicacion    Ubicacion      @default(CASA_CENTRAL)
-  fotos        String[]       // Array of image URLs
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-
-  operaciones  Operacion[]
-  documentos   Documento[]
-}
-
-model Operacion {
-  id                String    @id @default(cuid())
-  clienteId         String
-  vehiculoId        String
-  vendedorId        String
-  precioVehiculo    Float
-  formaPago         String?
-  efectivo          Float?
-  credito           Float?
-  autoPartePago     Float?
-  detalleAutoPartePago String?
-  porcentajeQuebranto Float?
-  gastosInscripcion Float?
-  gastosPrenda      Float?
-  accesorios        Float?
-  quebranto         Float?
-  gastosPatente     Float?
-  gastosTransferencia Float?
-  gastosPrendarios   Float?
-  confirmado        Boolean   @default(false)
-  observaciones     String?
-  total             Float
-  saldoPendiente    Float
-  comprobante       String?   @unique
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  cliente           Cliente   @relation(fields: [clienteId], references: [id])
-  vehiculo          Vehiculo  @relation(fields: [vehiculoId], references: [id])
-  vendedor          User      @relation(fields: [vendedorId], references: [id])
-
-  pagos             Pago[]
-  cuotas            Cuota[]
-  gastos            Gasto[]
-  documentos        Documento[]
-  servicios         Servicio[]
-}
-
-model Pago {
-  id              String    @id @default(cuid())
-  operacionId     String
-  fecha           DateTime
-  importe         Float
-  medioPago       MedioPago
-  observaciones   String?
-  comprobante     String?   @unique
-  comprobanteUrl  String?
-
-  operacion       Operacion @relation(fields: [operacionId], references: [id])
-}
-
-model Cuota {
-  id               String      @id @default(cuid())
-  operacionId      String
-  numeroCuota      Int
-  valor            Float
-  fechaVencimiento DateTime
-  estado           EstadoCuota @default(PENDIENTE)
-  medioPago        MedioPago?
-  fechaPago        DateTime?
-  comprobante      String?     @unique
-  comprobanteUrl   String?
-
-  operacion        Operacion   @relation(fields: [operacionId], references: [id])
-}
-
-model Gasto {
-  id           String        @id @default(cuid())
-  operacionId  String
-  concepto     ConceptoGasto
-  monto        Float
-  fecha        DateTime
-
-  operacion    Operacion     @relation(fields: [operacionId], references: [id])
-}
-
-model Documento {
-  id            String        @id @default(cuid())
-  operacionId   String?
-  clienteId     String?
-  vehiculoId    String?
-  tipo          TipoDocumento
-  url           String
-  nombreArchivo String
-  observaciones String?
-
-  operacion     Operacion?    @relation(fields: [operacionId], references: [id])
-  cliente       Cliente?      @relation(fields: [clienteId], references: [id])
-  vehiculo      Vehiculo?     @relation(fields: [vehiculoId], references: [id])
-}
-
-model ActivityLog {
-  id        String   @id @default(cuid())
-  userId    String
-  action    String   // e.g., "CREATE_VEHICLE", "UPDATE_CUSTOMER"
-  details   String?  // e.g., "Added Audi A4 (DOM-123)"
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-// ─── Créditos Históricos ───────────────────────────────────────────────────
-
-model CreditoHistorico {
-  id              String           @id @default(cuid())
-  clienteId       String
-  descripcion     String           // Ej: "Toyota Corolla 2019" o descripción libre
-  totalFinanciado Float
-  cantidadCuotas  Int
-  valorCuota      Float
-  intereses       Float?           @default(0)
-  fechaInicio     DateTime
-  observaciones   String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  cliente         Cliente          @relation(fields: [clienteId], references: [id])
-  cuotas          CuotaHistorica[]
-}
-
-model CuotaHistorica {
-  id               String           @id @default(cuid())
-  creditoId        String
-  numeroCuota      Int
-  valor            Float
-  fechaVencimiento DateTime
-  estado           EstadoCuota      @default(PENDIENTE)
-  fechaPago        DateTime?
-  montoPagado      Float?
-
-  credito          CreditoHistorico @relation(fields: [creditoId], references: [id])
-}
-
-// ─── Servicios & Agregados ────────────────────────────────────────────────
-
-model CatalogoServicio {
-  id          String       @id @default(cuid())
-  tipo        TipoServicio
-  descripcion String
-  monto       Float
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-model Servicio {
-  id            String       @id @default(cuid())
-  clienteId     String
-  operacionId   String?
-  tipo          TipoServicio
-  descripcion   String
-  monto         Float
-  pagado        Boolean      @default(false)
-  fecha         DateTime     @default(now())
-  observaciones String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  cliente       Cliente      @relation(fields: [clienteId], references: [id])
-  operacion     Operacion?   @relation(fields: [operacionId], references: [id])
 }

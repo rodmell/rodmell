@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatThousands, parseThousands } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const TIPO_LABELS: Record<string, string> = {
   ACCESORIO: "🔧 Accesorio",
@@ -35,6 +36,7 @@ export default function PaymentClient({ sale, totalRecaudado, session, catalogSe
   const [openPago, setOpenPago] = useState(false);
   const [openCuotas, setOpenCuotas] = useState(false);
   const [openService, setOpenService] = useState(false);
+  const [itemToDeleteService, setItemToDeleteService] = useState<string | null>(null);
 
   const [serviceData, setServiceData] = useState({ tipo: "ACCESORIO", descripcion: "", monto: "", pagado: false });
 
@@ -126,7 +128,6 @@ export default function PaymentClient({ sale, totalRecaudado, session, catalogSe
   };
 
   const handleDeleteService = async (serviceId: string) => {
-    if (!confirm("¿Estás seguro de eliminar este servicio?")) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/services/${serviceId}`, { method: "DELETE" });
@@ -791,7 +792,7 @@ export default function PaymentClient({ sale, totalRecaudado, session, catalogSe
                       {sv.pagado ? "Cobrado" : "Pendiente"}
                     </button>
                     
-                    <button onClick={() => handleDeleteService(sv.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar Servicio">
+                    <button onClick={() => setItemToDeleteService(sv.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar Servicio">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -871,6 +872,16 @@ export default function PaymentClient({ sale, totalRecaudado, session, catalogSe
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!itemToDeleteService}
+        onOpenChange={(open) => !open && setItemToDeleteService(null)}
+        title="Eliminar servicio"
+        description="¿Estás seguro de eliminar este servicio? Esta acción no se puede deshacer."
+        onConfirm={() => {
+          if (itemToDeleteService) handleDeleteService(itemToDeleteService);
+        }}
+      />
     </div>
   );
 }

@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatThousands, parseThousands } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const TIPOS_SERVICIO = [
   { value: "ACCESORIO", label: "🔧 Accesorio" },
@@ -147,6 +148,7 @@ export default function ServicesClient({
   const [search, setSearch] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
 
@@ -214,7 +216,6 @@ export default function ServicesClient({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este servicio?")) return;
     const res = await fetch(`/api/services/${id}`, { method: "DELETE" });
     if (res.ok) router.refresh();
     else alert("Error al eliminar");
@@ -361,7 +362,7 @@ export default function ServicesClient({
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(sv.id)}
+                        onClick={() => setItemToDelete(sv.id)}
                         className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
                         title="Eliminar"
                       >
@@ -534,6 +535,16 @@ export default function ServicesClient({
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+        title="Eliminar servicio"
+        description="¿Estás seguro de eliminar este servicio? Esta acción no se puede deshacer."
+        onConfirm={() => {
+          if (itemToDelete) handleDelete(itemToDelete);
+        }}
+      />
     </div>
   );
 }
