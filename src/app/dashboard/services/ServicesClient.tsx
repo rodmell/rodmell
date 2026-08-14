@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wrench,
@@ -60,6 +60,13 @@ function SearchableSelect({ options, value, onChange, placeholder }: any) {
     return found ? found.label : "";
   });
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      const found = options.find((o: any) => o.value === value);
+      setSearch(found ? found.label : "");
+    }
+  }, [value, options, open]);
 
   const handleSelect = (optionVal: string, optionLabel: string) => {
     onChange(optionVal);
