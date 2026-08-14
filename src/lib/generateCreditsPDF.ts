@@ -14,7 +14,6 @@ export const generateCreditsPDF = (
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
 
   const writeText = (text: string, x: number, y: number, size: number, font = "helvetica", style = "normal", color = "#000000") => {
     doc.setFont(font, style);
@@ -58,7 +57,7 @@ export const generateCreditsPDF = (
     doc.line(15, decorY, pageWidth - 15, decorY);
   };
 
-  let startY = 65;
+  const startY = 65;
 
   const tableData: any[] = [];
 
@@ -121,7 +120,7 @@ export const generateCreditsPDF = (
         7: { halign: "center" }
       },
       margin: { top: 60, left: 15, right: 15 },
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         // Leave the decoration drawing for later so we know total pages
       }
     });
