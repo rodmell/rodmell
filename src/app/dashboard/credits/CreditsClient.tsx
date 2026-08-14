@@ -14,7 +14,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -112,7 +111,6 @@ export default function CreditsClient({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [payingCuota, setPayingCuota] = useState<any>(null);
 
   const [form, setForm] = useState({
     clienteId: "",
@@ -174,7 +172,7 @@ export default function CreditsClient({
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -220,7 +218,7 @@ export default function CreditsClient({
     else alert("Error al eliminar");
   };
 
-  const handleMarkCuotaHistorica = async (cuota: any, creditoId: string) => {
+  const handleMarkCuotaHistorica = async (cuota: any) => {
     const fechaPago = new Date().toISOString().split("T")[0];
     const res = await fetch(`/api/credits/${cuota.id}`, {
       method: "PUT",
@@ -472,7 +470,7 @@ export default function CreditsClient({
                           <TableCell className="text-right">
                             {c.estado !== "PAGADA" && (
                               <button
-                                onClick={() => handleMarkCuotaHistorica(c, cr.id)}
+                                onClick={() => handleMarkCuotaHistorica(c)}
                                 className="px-2 py-0.5 text-xs text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 rounded transition-colors"
                               >
                                 Marcar Pagada
