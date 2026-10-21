@@ -35,6 +35,7 @@ export default async function CreditsPage() {
       operacionesConCuotas={operacionesConCuotas}
       creditosHistoricos={creditosHistoricos}
       clientes={clientes}
+      session={session}
     />
   );
 }

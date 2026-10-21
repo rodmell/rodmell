@@ -144,11 +144,21 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
 
   // Vehículo
   const halfX = pageWidth / 2 + 7.5;
-  writeText("INFORMACIÓN DEL VEHÍCULO", halfX, y + 8, 10, "helvetica", "bold");
-  writeText(`Marca y Modelo: ${sale.vehiculo?.marca || ""} ${sale.vehiculo?.modelo || ""}`, halfX, y + 15, 9, "helvetica", "normal");
-  writeText(`Año: ${sale.vehiculo?.anio || "-"}`, halfX, y + 21, 9);
-  writeText(`Dominio: ${sale.vehiculo?.dominio || "-"}`, halfX, y + 27, 9);
-  writeText(`Chasis: ${sale.vehiculo?.chasis || "-"}`, halfX, y + 33, 9);
+  if (sale.isCreditoHistorico) {
+    writeText("INFORMACIÓN DEL CRÉDITO", halfX, y + 8, 10, "helvetica", "bold");
+    writeText(`Descripción: ${sale.descripcion || sale.vehiculo?.marca || "-"}`, halfX, y + 15, 9, "helvetica", "normal");
+    writeText(`Plan: ${sale.cantidadCuotas ? `${sale.cantidadCuotas} cuotas de $${(sale.valorCuota || 0).toLocaleString("es-AR")}` : "-"}`, halfX, y + 21, 9);
+    writeText(`Total Financiado: $${(sale.totalFinanciado || 0).toLocaleString("es-AR")}`, halfX, y + 27, 9);
+    if (sale.observaciones) {
+      writeText(`Obs: ${sale.observaciones}`, halfX, y + 33, 9);
+    }
+  } else {
+    writeText("INFORMACIÓN DEL VEHÍCULO", halfX, y + 8, 10, "helvetica", "bold");
+    writeText(`Marca y Modelo: ${sale.vehiculo?.marca || ""} ${sale.vehiculo?.modelo || ""}`, halfX, y + 15, 9, "helvetica", "normal");
+    writeText(`Año: ${sale.vehiculo?.anio || "-"}`, halfX, y + 21, 9);
+    writeText(`Dominio: ${sale.vehiculo?.dominio || "-"}`, halfX, y + 27, 9);
+    writeText(`Chasis: ${sale.vehiculo?.chasis || "-"}`, halfX, y + 33, 9);
+  }
   
   y += 48;
 
@@ -176,7 +186,8 @@ export const generateReceiptPDF = async (sale: any, type: "VENTA" | "PAGO" | "CU
   } else if (type === "PAGO") {
     tableData.push([`Pago: ${item.medioPago === "SENA" ? "Seña" : item.medioPago}`, item.observaciones || "Abono a cuenta", `$${item.importe.toLocaleString()}`]);
   } else if (type === "CUOTA") {
-    tableData.push([`Cuota Nº ${item.numeroCuota}`, `Pago de cuota mediante ${item.medioPago || "EFECTIVO"}`, `$${item.valor.toLocaleString()}`]);
+    const cuotaValor = item.montoPagado || item.valor || 0;
+    tableData.push([`Cuota Nº ${item.numeroCuota}`, `Pago de cuota mediante ${item.medioPago || "EFECTIVO"}`, `$${cuotaValor.toLocaleString("es-AR")}`]);
   }
 
   autoTable(doc, {

@@ -17,6 +17,7 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,10 +102,12 @@ export default function CreditsClient({
   operacionesConCuotas,
   creditosHistoricos,
   clientes,
+  session,
 }: {
   operacionesConCuotas: any[];
   creditosHistoricos: any[];
   clientes: any[];
+  session?: any;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -219,20 +222,84 @@ export default function CreditsClient({
     else alert("Error al eliminar");
   };
 
-  const handleMarkCuotaHistorica = async (cuota: any) => {
+  const handleDownloadCuotaSistema = async (operacion: any, cuota: any) => {
+    try {
+      const { generateReceiptPDF } = await import("@/lib/generateReceipt");
+      await generateReceiptPDF(operacion, "CUOTA", cuota, session?.user?.ubicacion);
+      toast.success(`Comprobante de cuota #${cuota.numeroCuota} generado`);
+    } catch (error) {
+      console.error("Error al generar comprobante:", error);
+      toast.error("Error al generar el comprobante");
+    }
+  };
+
+  const handleDownloadCuotaHistorica = async (credito: any, cuota: any) => {
+    try {
+      const { generateReceiptPDF } = await import("@/lib/generateReceipt");
+      const creditoSaleAdapter = {
+        id: credito.id,
+        isCreditoHistorico: true,
+        descripcion: credito.descripcion,
+        totalFinanciado: credito.totalFinanciado,
+        cantidadCuotas: credito.cantidadCuotas,
+        valorCuota: credito.valorCuota,
+        intereses: credito.intereses,
+        observaciones: credito.observaciones,
+        createdAt: credito.createdAt || credito.fechaInicio,
+        cliente: credito.cliente,
+        vehiculo: {
+          marca: credito.descripcion || "Crédito Histórico",
+          modelo: "",
+          anio: "-",
+          dominio: "-",
+          chasis: "-",
+        },
+      };
+      const cuotaItemAdapter = {
+        id: cuota.id,
+        comprobante: `CH-${cuota.id.slice(-6).toUpperCase()}`,
+        numeroCuota: cuota.numeroCuota,
+        medioPago: "EFECTIVO",
+        valor: cuota.montoPagado || cuota.valor,
+        fechaPago: cuota.fechaPago || new Date(),
+      };
+      await generateReceiptPDF(creditoSaleAdapter, "CUOTA", cuotaItemAdapter, session?.user?.ubicacion);
+      toast.success(`Comprobante de cuota #${cuota.numeroCuota} generado`);
+    } catch (error) {
+      console.error("Error al generar comprobante:", error);
+      toast.error("Error al generar el comprobante");
+    }
+  };
+
+  const handleMarkCuotaHistorica = async (cuota: any, credito: any) => {
+    if (!confirm(`¿Confirmar pago de la cuota #${cuota.numeroCuota}? Se generará y descargará el comprobante de pago.`)) return;
     const fechaPago = new Date().toISOString().split("T")[0];
-    const res = await fetch(`/api/credits/${cuota.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "cuota-historica",
-        estado: "PAGADA",
-        fechaPago,
-        montoPagado: cuota.valor,
-      }),
-    });
-    if (res.ok) router.refresh();
-    else alert("Error al marcar cuota");
+    try {
+      const res = await fetch(`/api/credits/${cuota.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "cuota-historica",
+          estado: "PAGADA",
+          fechaPago,
+          montoPagado: cuota.valor,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Cuota #${cuota.numeroCuota} marcada como pagada`);
+        await handleDownloadCuotaHistorica(credito, {
+          ...cuota,
+          estado: "PAGADA",
+          fechaPago,
+          montoPagado: cuota.valor,
+        });
+        router.refresh();
+      } else {
+        toast.error("Error al marcar cuota");
+      }
+    } catch {
+      toast.error("Error de conexión");
+    }
   };
 
   const handleExportPDF = async () => {
@@ -386,6 +453,8 @@ export default function CreditsClient({
                           <TableCell colSpan={2} className="pl-6 text-xs text-zinc-500">
                             Cuota #{c.numeroCuota} — Vence: {new Date(c.fechaVencimiento).toLocaleDateString("es-AR")}
                             {c.fechaPago && <span className="ml-2 text-green-500">Pagada: {new Date(c.fechaPago).toLocaleDateString("es-AR")}</span>}
+                            {c.medioPago && <span className="ml-2 text-zinc-400">({c.medioPago})</span>}
+                            {c.comprobante && <span className="ml-2 text-yellow-500 font-mono">Nº {c.comprobante}</span>}
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${ESTADO_COLORS[c.estado]}`}>
@@ -394,7 +463,31 @@ export default function CreditsClient({
                           </TableCell>
                           <TableCell className="text-right text-zinc-300 font-mono text-xs">${c.valor.toLocaleString("es-AR")}</TableCell>
                           <TableCell />
-                          <TableCell />
+                          <TableCell className="text-right">
+                            {c.estado === "PAGADA" ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadCuotaSistema(op, c);
+                                }}
+                                className="px-2.5 py-1 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors inline-flex items-center gap-1.5"
+                                title="Descargar Comprobante de Pago"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Comprobante</span>
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/dashboard/sales/${op.id}/payments`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 text-xs text-zinc-400 border border-zinc-700/50 hover:text-green-400 hover:border-green-500/30 hover:bg-green-500/10 rounded transition-colors inline-flex items-center gap-1.5"
+                                title="Ir a cobrar en billetera"
+                              >
+                                <Wallet className="w-3.5 h-3.5" />
+                                <span>Cobrar</span>
+                              </Link>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </>
@@ -472,6 +565,7 @@ export default function CreditsClient({
                           <TableCell colSpan={2} className="pl-6 text-xs text-zinc-500">
                             Cuota #{c.numeroCuota} — Vence: {new Date(c.fechaVencimiento).toLocaleDateString("es-AR")}
                             {c.fechaPago && <span className="ml-2 text-green-500">Pagada: {new Date(c.fechaPago).toLocaleDateString("es-AR")}</span>}
+                            <span className="ml-2 text-yellow-500 font-mono">Nº CH-{c.id.slice(-6).toUpperCase()}</span>
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${ESTADO_COLORS[c.estado]}`}>
@@ -481,12 +575,28 @@ export default function CreditsClient({
                           <TableCell className="text-right text-zinc-300 font-mono text-xs">${c.valor.toLocaleString("es-AR")}</TableCell>
                           <TableCell />
                           <TableCell className="text-right">
-                            {c.estado !== "PAGADA" && (
+                            {c.estado === "PAGADA" ? (
                               <button
-                                onClick={() => handleMarkCuotaHistorica(c)}
-                                className="px-2 py-0.5 text-xs text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 rounded transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadCuotaHistorica(cr, c);
+                                }}
+                                className="px-2.5 py-1 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors inline-flex items-center gap-1.5"
+                                title="Descargar Comprobante de Pago"
                               >
-                                Marcar Pagada
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Comprobante</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkCuotaHistorica(c, cr);
+                                }}
+                                className="px-2.5 py-1 text-xs text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 rounded transition-colors inline-flex items-center gap-1.5"
+                                title="Marcar como pagada y generar comprobante"
+                              >
+                                <span>Marcar Pagada</span>
                               </button>
                             )}
                           </TableCell>
