@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,6 +28,8 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const [formData, setFormData] = useState({
     nombreCompleto: "",
@@ -149,73 +151,187 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
         </Dialog>
       </div>
 
+      {/* Buscador reactivo */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
         <Input 
-          placeholder="Buscar por nombre, DNI, teléfono, email o Nº de comprobante..." 
-          className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
+          placeholder="Buscar por nombre, DNI, CUIL, teléfono, email, dirección o Nº de comprobante..." 
+          className="pl-10 pr-10 bg-[#0a0a0a] border-[#222] text-white"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
         />
+        {searchTerm && (
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setCurrentPage(1);
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+            title="Limpiar búsqueda"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-[#222] hover:bg-transparent">
-              <TableHead className="text-zinc-400">Nombre Completo</TableHead>
-              <TableHead className="text-zinc-400">DNI</TableHead>
-              <TableHead className="text-zinc-400">Teléfono</TableHead>
-              <TableHead className="text-zinc-400">Email</TableHead>
-              <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {customers.filter(c => {
-              const allComprobantes = c.operaciones?.flatMap((op: any) => [
-                op.comprobante, op.id.slice(-6).toUpperCase(),
-                ...op.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()),
-                ...op.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase())
-              ]).filter(Boolean).join(" ") || "";
-              
-              return `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email} ${allComprobantes}`.toLowerCase().includes(searchTerm.toLowerCase());
-            }).length === 0 ? (
-              <TableRow className="border-[#222] hover:bg-transparent">
-                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
-                  No hay clientes registrados
-                </TableCell>
-              </TableRow>
-            ) : (
-              customers.filter(c => {
-                const allComprobantes = c.operaciones?.flatMap((op: any) => [
-                  op.comprobante, op.id.slice(-6).toUpperCase(),
-                  ...op.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()),
-                  ...op.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase())
-                ]).filter(Boolean).join(" ") || "";
-                
-                return `${c.nombreCompleto} ${c.dni} ${c.telefono} ${c.email} ${allComprobantes}`.toLowerCase().includes(searchTerm.toLowerCase());
-              }).map((c) => (
-                <TableRow key={c.id} className="border-[#222] hover:bg-[#111]">
-                  <TableCell className="font-medium text-white">{c.nombreCompleto}</TableCell>
-                  <TableCell className="text-zinc-300">{c.dni}</TableCell>
-                  <TableCell className="text-zinc-300">{c.telefono}</TableCell>
-                  <TableCell className="text-zinc-300">{c.email}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleEdit(c)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(c.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+      {/* Tabla con Paginación */}
+      {(() => {
+        const filteredCustomers = customers.filter(c => {
+          if (!searchTerm.trim()) return true;
+          const term = searchTerm.toLowerCase();
+          const allComprobantes = c.operaciones?.flatMap((op: any) => [
+            op.comprobante, 
+            op.id?.slice(-6).toUpperCase(),
+            op.vehiculo ? `${op.vehiculo.marca} ${op.vehiculo.modelo} ${op.vehiculo.dominio}` : "",
+            ...op.pagos?.map((p: any) => p.comprobante || p.id?.slice(-6).toUpperCase()),
+            ...op.cuotas?.map((cu: any) => cu.comprobante || cu.id?.slice(-6).toUpperCase())
+          ]).filter(Boolean).join(" ") || "";
+          
+          const fullText = `${c.nombreCompleto} ${c.dni || ""} ${c.cuil || ""} ${c.telefono || ""} ${c.email || ""} ${c.direccion || ""} ${allComprobantes}`.toLowerCase();
+          return fullText.includes(term);
+        });
+
+        const totalResults = filteredCustomers.length;
+        const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
+        const safeCurrentPage = Math.min(currentPage, totalPages);
+        const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalResults);
+        const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-[#222] hover:bg-transparent">
+                    <TableHead className="text-zinc-400">Nombre Completo</TableHead>
+                    <TableHead className="text-zinc-400">DNI</TableHead>
+                    <TableHead className="text-zinc-400">Teléfono</TableHead>
+                    <TableHead className="text-zinc-400">Email</TableHead>
+                    <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedCustomers.length === 0 ? (
+                    <TableRow className="border-[#222] hover:bg-transparent">
+                      <TableCell colSpan={5} className="text-center py-10 text-zinc-500">
+                        {searchTerm ? (
+                          <div className="space-y-2">
+                            <p>No se encontraron clientes que coincidan con &quot;{searchTerm}&quot;.</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => { setSearchTerm(""); setCurrentPage(1); }}
+                              className="border-[#333] text-zinc-300 hover:text-white"
+                            >
+                              Limpiar búsqueda
+                            </Button>
+                          </div>
+                        ) : (
+                          "No hay clientes registrados"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedCustomers.map((c) => (
+                      <TableRow key={c.id} className="border-[#222] hover:bg-[#111] transition-colors">
+                        <TableCell className="font-medium text-white">{c.nombreCompleto}</TableCell>
+                        <TableCell className="text-zinc-300">{c.dni || "-"}</TableCell>
+                        <TableCell className="text-zinc-300">{c.telefono || "-"}</TableCell>
+                        <TableCell className="text-zinc-300">{c.email || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => handleEdit(c)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar cliente">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(c.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar cliente">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Controles de paginación */}
+            {totalResults > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg">
+                <div className="text-xs text-zinc-400">
+                  Mostrando <span className="font-medium text-white">{startIndex + 1}</span> a{" "}
+                  <span className="font-medium text-white">{endIndex}</span> de{" "}
+                  <span className="font-medium text-white">{totalResults}</span> clientes
+                  {searchTerm && <span className="text-zinc-500 ml-1">({customers.length} en total)</span>}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-400 mr-2">
+                    Página <span className="font-semibold text-white">{safeCurrentPage}</span> de{" "}
+                    <span className="font-semibold text-white">{totalPages}</span>
+                  </span>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safeCurrentPage <= 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="h-8 px-2.5 bg-[#111] border-[#333] text-zinc-300 hover:bg-[#222] hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Anterior
+                  </Button>
+
+                  {/* Números de página */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
+                      .reduce((acc: (number | string)[], p, idx, arr) => {
+                        if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+                          acc.push("...");
+                        }
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) => (
+                        typeof p === "string" ? (
+                          <span key={`dots-${i}`} className="px-1 text-xs text-zinc-600">...</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setCurrentPage(p)}
+                            className={`w-8 h-8 rounded text-xs font-medium transition-colors ${
+                              safeCurrentPage === p
+                                ? "bg-yellow-500 text-black font-bold"
+                                : "bg-[#111] text-zinc-400 hover:bg-[#222] hover:text-white border border-[#333]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safeCurrentPage >= totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="h-8 px-2.5 bg-[#111] border-[#333] text-zinc-300 hover:bg-[#222] hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    Siguiente
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             )}
-          </TableBody>
-        </Table>
-      </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

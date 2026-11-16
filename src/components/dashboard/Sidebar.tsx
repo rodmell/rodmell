@@ -13,6 +13,7 @@ import {
   BarChart3,
   CreditCard,
   Wrench,
+  MessageSquareText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ const allLinks = [
   { name: "Dashboard",        href: "/dashboard",           icon: LayoutDashboard, roles: ["ADMIN", "MANAGER"] },
   { name: "Vehículos",        href: "/dashboard/vehicles",  icon: Car,             roles: ["SELLER", "ADMIN", "MANAGER"] },
   { name: "Clientes",         href: "/dashboard/customers", icon: Users,           roles: ["SELLER", "ADMIN", "MANAGER"] },
+  { name: "Consultas",        href: "/dashboard/consultas", icon: MessageSquareText, roles: ["SELLER", "ADMIN", "MANAGER"] },
   { name: "Ventas",           href: "/dashboard/sales",     icon: BadgeDollarSign, roles: ["SELLER", "ADMIN", "MANAGER"] },
   { name: "Créditos",         href: "/dashboard/credits",   icon: CreditCard,      roles: ["SELLER", "ADMIN", "MANAGER"] },
   { name: "Servicios",        href: "/dashboard/services",  icon: Wrench,          roles: ["SELLER", "ADMIN", "MANAGER"] },

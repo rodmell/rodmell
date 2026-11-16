@@ -37,6 +37,7 @@ model Cliente {
   documentos         Documento[]
   operaciones        Operacion[]
   servicios          Servicio[]
+  consultas          Consulta[]
 }
 
 model Vehiculo {
@@ -278,4 +279,19 @@ enum TipoServicio {
   ALARMA
   SERVICE
   OTROS
+}
+
+model Consulta {
+  id            String    @id @default(cuid())
+  nombre        String
+  telefono      String?
+  email         String?
+  quienAtendio  String?
+  interes       String?
+  observaciones String?
+  estado        String    @default("PENDIENTE")
+  clienteId     String?
+  cliente       Cliente?  @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }

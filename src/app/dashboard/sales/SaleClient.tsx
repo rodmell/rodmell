@@ -9,6 +9,9 @@ import {
   Trash2, 
   FileText, 
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
   BadgeDollarSign, 
   Edit,
   Wallet,
@@ -116,6 +119,8 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const [formData, setFormData] = useState({
     clienteId: "",
@@ -552,97 +557,212 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
         </Dialog>
       </div>
 
+      {/* Buscador reactivo */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
         <Input 
           placeholder="Buscar por cliente, vehículo, forma de pago o Nº comprobante..." 
-          className="pl-10 bg-[#0a0a0a] border-[#222] text-white"
+          className="pl-10 pr-10 bg-[#0a0a0a] border-[#222] text-white"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
         />
+        {searchTerm && (
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setCurrentPage(1);
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+            title="Limpiar búsqueda"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      <div className="bg-[#0a0a0a] border border-[#222] rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-[#222] hover:bg-transparent">
-              <TableHead className="text-zinc-400">Fecha</TableHead>
-              <TableHead className="text-zinc-400">Cliente</TableHead>
-              <TableHead className="text-zinc-400">Vehículo</TableHead>
-              <TableHead className="text-zinc-400">Forma Pago</TableHead>
-              <TableHead className="text-zinc-400">Nº Comp.</TableHead>
-              <TableHead className="text-zinc-400">Estado</TableHead>
-              <TableHead className="text-zinc-400 text-right">Total</TableHead>
-              <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sales.filter(s => {
-              const innerIds = [
-                ...(s.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()) || []),
-                ...(s.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase()) || [])
-              ].join(" ");
-              return `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || s.id.slice(-6).toUpperCase()} ${innerIds}`.toLowerCase().includes(searchTerm.toLowerCase());
-            }).length === 0 ? (
-              <TableRow className="border-[#222] hover:bg-transparent">
-                <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
-                  No hay ventas registradas
-                </TableCell>
-              </TableRow>
-            ) : (
-              sales.filter(s => {
-                const innerIds = [
-                  ...(s.pagos?.map((p: any) => p.comprobante || p.id.slice(-6).toUpperCase()) || []),
-                  ...(s.cuotas?.map((cu: any) => cu.comprobante || cu.id.slice(-6).toUpperCase()) || [])
-                ].join(" ");
-                return `${s.cliente?.nombreCompleto} ${s.vehiculo?.marca} ${s.vehiculo?.modelo} ${s.formaPago} ${s.comprobante || s.id.slice(-6).toUpperCase()} ${innerIds}`.toLowerCase().includes(searchTerm.toLowerCase());
-              }).map((s) => (
-                <TableRow key={s.id} className="border-[#222] hover:bg-[#111]">
-                  <TableCell className="text-zinc-300">{new Date(s.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>
-                  <TableCell className="text-zinc-300">{s.vehiculo?.marca} {s.vehiculo?.modelo}</TableCell>
-                  <TableCell className="text-zinc-300">{s.formaPago}</TableCell>
-                  <TableCell className="text-yellow-500 font-mono text-xs">{s.comprobante || s.id.slice(-6).toUpperCase()}</TableCell>
-                  <TableCell>
-                    {s.confirmado ? (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold border text-green-400 border-green-500/30 bg-green-500/10">
-                        Pagado
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold border text-yellow-400 border-yellow-500/30 bg-yellow-500/10">
-                        A Confirmar
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {s.confirmado ? (
-                        <button onClick={() => handleDownloadPDF(s)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
-                          <FileText className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <button onClick={() => handleConfirmSale(s)} className="p-1.5 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Confirmar Pago y Descargar Comprobante">
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
-                      <Link href={`/dashboard/sales/${s.id}/payments`} className="p-1.5 text-zinc-400 hover:text-green-500 hover:bg-green-500/10 rounded transition-colors" title="Gestión de Pagos y Cuotas">
-                        <Wallet className="w-4 h-4" />
-                      </Link>
-                      <button onClick={() => handleEdit(s)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(s.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+      {/* Tabla con Paginación */}
+      {(() => {
+        const filteredSales = sales.filter(s => {
+          if (!searchTerm.trim()) return true;
+          const term = searchTerm.toLowerCase();
+          const innerIds = [
+            ...(s.pagos?.map((p: any) => p.comprobante || p.id?.slice(-6).toUpperCase()) || []),
+            ...(s.cuotas?.map((cu: any) => cu.comprobante || cu.id?.slice(-6).toUpperCase()) || [])
+          ].join(" ");
+
+          const searchable = `${s.cliente?.nombreCompleto || ""} ${s.cliente?.dni || ""} ${s.cliente?.telefono || ""} ${s.vehiculo?.marca || ""} ${s.vehiculo?.modelo || ""} ${s.vehiculo?.dominio || ""} ${s.formaPago || ""} ${s.comprobante || s.id?.slice(-6).toUpperCase() || ""} ${innerIds}`.toLowerCase();
+          return searchable.includes(term);
+        });
+
+        const totalResults = filteredSales.length;
+        const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
+        const safeCurrentPage = Math.min(currentPage, totalPages);
+        const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalResults);
+        const paginatedSales = filteredSales.slice(startIndex, endIndex);
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-[#0a0a0a] border border-[#222] rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-[#222] hover:bg-transparent">
+                    <TableHead className="text-zinc-400">Fecha</TableHead>
+                    <TableHead className="text-zinc-400">Cliente</TableHead>
+                    <TableHead className="text-zinc-400">Vehículo</TableHead>
+                    <TableHead className="text-zinc-400">Forma Pago</TableHead>
+                    <TableHead className="text-zinc-400">Nº Comp.</TableHead>
+                    <TableHead className="text-zinc-400">Estado</TableHead>
+                    <TableHead className="text-zinc-400 text-right">Total</TableHead>
+                    <TableHead className="text-zinc-400 text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSales.length === 0 ? (
+                    <TableRow className="border-[#222] hover:bg-transparent">
+                      <TableCell colSpan={8} className="text-center py-10 text-zinc-500">
+                        {searchTerm ? (
+                          <div className="space-y-2">
+                            <p>No se encontraron ventas que coincidan con &quot;{searchTerm}&quot;.</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => { setSearchTerm(""); setCurrentPage(1); }}
+                              className="border-[#333] text-zinc-300 hover:text-white"
+                            >
+                              Limpiar búsqueda
+                            </Button>
+                          </div>
+                        ) : (
+                          "No hay ventas registradas"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedSales.map((s) => (
+                      <TableRow key={s.id} className="border-[#222] hover:bg-[#111] transition-colors">
+                        <TableCell className="text-zinc-300">{new Date(s.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium text-white">{s.cliente?.nombreCompleto}</TableCell>
+                        <TableCell className="text-zinc-300">{s.vehiculo?.marca} {s.vehiculo?.modelo}</TableCell>
+                        <TableCell className="text-zinc-300">{s.formaPago}</TableCell>
+                        <TableCell className="text-yellow-500 font-mono text-xs">{s.comprobante || s.id.slice(-6).toUpperCase()}</TableCell>
+                        <TableCell>
+                          {s.confirmado ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold border text-green-400 border-green-500/30 bg-green-500/10">
+                              Pagado
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold border text-yellow-400 border-yellow-500/30 bg-yellow-500/10">
+                              A Confirmar
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {s.confirmado ? (
+                              <button onClick={() => handleDownloadPDF(s)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
+                                <FileText className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button onClick={() => handleConfirmSale(s)} className="p-1.5 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors" title="Confirmar Pago y Descargar Comprobante">
+                                <Check className="w-4 h-4" />
+                              </button>
+                            )}
+                            <Link href={`/dashboard/sales/${s.id}/payments`} className="p-1.5 text-zinc-400 hover:text-green-500 hover:bg-green-500/10 rounded transition-colors" title="Gestión de Pagos y Cuotas">
+                              <Wallet className="w-4 h-4" />
+                            </Link>
+                            <button onClick={() => handleEdit(s)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar venta">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(s.id)} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar venta">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Controles de paginación */}
+            {totalResults > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-3 bg-[#0a0a0a] border border-[#222] rounded-lg">
+                <div className="text-xs text-zinc-400">
+                  Mostrando <span className="font-medium text-white">{startIndex + 1}</span> a{" "}
+                  <span className="font-medium text-white">{endIndex}</span> de{" "}
+                  <span className="font-medium text-white">{totalResults}</span> ventas
+                  {searchTerm && <span className="text-zinc-500 ml-1">({sales.length} en total)</span>}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-400 mr-2">
+                    Página <span className="font-semibold text-white">{safeCurrentPage}</span> de{" "}
+                    <span className="font-semibold text-white">{totalPages}</span>
+                  </span>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safeCurrentPage <= 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="h-8 px-2.5 bg-[#111] border-[#333] text-zinc-300 hover:bg-[#222] hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Anterior
+                  </Button>
+
+                  {/* Números de página */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
+                      .reduce((acc: (number | string)[], p, idx, arr) => {
+                        if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+                          acc.push("...");
+                        }
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) => (
+                        typeof p === "string" ? (
+                          <span key={`dots-${i}`} className="px-1 text-xs text-zinc-600">...</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setCurrentPage(p)}
+                            className={`w-8 h-8 rounded text-xs font-medium transition-colors ${
+                              safeCurrentPage === p
+                                ? "bg-yellow-500 text-black font-bold"
+                                : "bg-[#111] text-zinc-400 hover:bg-[#222] hover:text-white border border-[#333]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safeCurrentPage >= totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="h-8 px-2.5 bg-[#111] border-[#333] text-zinc-300 hover:bg-[#222] hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    Siguiente
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             )}
-          </TableBody>
-        </Table>
-      </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

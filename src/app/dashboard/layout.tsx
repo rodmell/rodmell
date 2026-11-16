@@ -11,6 +11,7 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/dashboard":           ["ADMIN", "MANAGER"],
   "/dashboard/vehicles":  ["SELLER", "ADMIN", "MANAGER"],
   "/dashboard/customers": ["SELLER", "ADMIN", "MANAGER"],
+  "/dashboard/consultas": ["SELLER", "ADMIN", "MANAGER"],
   "/dashboard/sales":     ["SELLER", "ADMIN", "MANAGER"],
   "/dashboard/credits":   ["SELLER", "ADMIN", "MANAGER"],
   "/dashboard/services":  ["SELLER", "ADMIN", "MANAGER"],
