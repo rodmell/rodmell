@@ -146,49 +146,6 @@ export default function CreditsClient({
     observaciones: "",
   });
 
-  // ── Meses disponibles para el selector ─────────────────────────────────────
-  const availableMonths = useMemo(() => {
-    const monthsSet = new Set<string>();
-    const currentYear = now.getFullYear();
-    for (let m = 1; m <= 12; m++) {
-      monthsSet.add(`${currentYear}-${String(m).padStart(2, "0")}`);
-    }
-
-    operacionesConCuotas.forEach((op: any) => {
-      const d = new Date(op.createdAt);
-      monthsSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-      op.cuotas?.forEach((c: any) => {
-        if (c.fechaVencimiento) {
-          const vd = new Date(c.fechaVencimiento);
-          monthsSet.add(`${vd.getFullYear()}-${String(vd.getMonth() + 1).padStart(2, "0")}`);
-        }
-        if (c.fechaPago) {
-          const pd = new Date(c.fechaPago);
-          monthsSet.add(`${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, "0")}`);
-        }
-      });
-    });
-
-    creditosHistoricos.forEach((cr: any) => {
-      if (cr.fechaInicio) {
-        const d = new Date(cr.fechaInicio);
-        monthsSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-      }
-      cr.cuotas?.forEach((c: any) => {
-        if (c.fechaVencimiento) {
-          const vd = new Date(c.fechaVencimiento);
-          monthsSet.add(`${vd.getFullYear()}-${String(vd.getMonth() + 1).padStart(2, "0")}`);
-        }
-        if (c.fechaPago) {
-          const pd = new Date(c.fechaPago);
-          monthsSet.add(`${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, "0")}`);
-        }
-      });
-    });
-
-    return Array.from(monthsSet).sort().reverse();
-  }, [operacionesConCuotas, creditosHistoricos]);
-
   // Helper para verificar coincidencia con el mes seleccionado
   const dateMatchesMonth = (dateVal: any, monthStr: string) => {
     if (!monthStr || !dateVal) return false;
@@ -515,22 +472,12 @@ export default function CreditsClient({
           <div className="flex items-center gap-2 bg-[#0a0a0a] border border-[#222] p-1.5 rounded-lg">
             <Calendar className="w-4 h-4 text-yellow-500 ml-2" />
             <span className="text-xs text-zinc-400 font-semibold uppercase hidden sm:inline">Mes:</span>
-            <select
+            <input
+              type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-[#111] border border-[#333] text-white text-xs rounded-md px-2.5 py-1.5 focus:outline-none focus:border-yellow-500 transition-colors cursor-pointer"
-            >
-              <option value="">Todos los meses</option>
-              {availableMonths.map((mStr) => {
-                const [y, m] = mStr.split("-").map(Number);
-                const label = `${MONTH_NAMES[m - 1]} ${y}`;
-                return (
-                  <option key={mStr} value={mStr}>
-                    {label} {mStr === currentMonthStr ? "(Actual)" : ""}
-                  </option>
-                );
-              })}
-            </select>
+              className="bg-[#111] border border-[#333] text-white text-xs rounded-md px-2.5 py-1.5 focus:outline-none focus:border-yellow-500 transition-colors cursor-pointer [color-scheme:dark]"
+            />
 
             {selectedMonth && (
               <button
@@ -539,6 +486,16 @@ export default function CreditsClient({
                 title="Quitar filtro de mes"
               >
                 <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {selectedMonth !== currentMonthStr && (
+              <button
+                onClick={() => setSelectedMonth(currentMonthStr)}
+                className="text-xs text-yellow-500 hover:text-yellow-400 font-medium px-2 py-1 transition-colors"
+                title="Ir al mes actual"
+              >
+                Mes actual
               </button>
             )}
           </div>

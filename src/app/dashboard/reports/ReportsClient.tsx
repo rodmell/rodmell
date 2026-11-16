@@ -74,28 +74,6 @@ export default function ReportsClient({ sales, vehicles, customers }: { sales: a
     }).sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
   }, [sales]);
 
-  // Available months extracted from data & current year
-  const availableMonths = useMemo(() => {
-    const monthsSet = new Set<string>();
-    // Add current year months
-    const y = now.getFullYear();
-    for (let m = 1; m <= 12; m++) {
-      monthsSet.add(`${y}-${String(m).padStart(2, '0')}`);
-    }
-    // Add months from movements & sales
-    allMovements.forEach(m => {
-      const my = m.fecha.getFullYear();
-      const mm = String(m.fecha.getMonth() + 1).padStart(2, '0');
-      monthsSet.add(`${my}-${mm}`);
-    });
-    sales.forEach(s => {
-      const d = new Date(s.createdAt);
-      monthsSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-    });
-
-    return Array.from(monthsSet).sort().reverse();
-  }, [allMovements, sales]);
-
   // Filtered movements by month
   const movementsFilteredByMonth = useMemo(() => {
     if (!selectedMonth) return allMovements;
@@ -204,22 +182,12 @@ export default function ReportsClient({ sales, vehicles, customers }: { sales: a
             <span>Filtrar Mes:</span>
           </div>
 
-          <select
+          <input
+            type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-[#111] border border-[#333] text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-yellow-500 transition-colors cursor-pointer"
-          >
-            <option value="">Todos los meses (Histórico general)</option>
-            {availableMonths.map((mStr) => {
-              const [y, m] = mStr.split("-").map(Number);
-              const label = `${MONTH_NAMES[m - 1]} ${y}`;
-              return (
-                <option key={mStr} value={mStr}>
-                  {label} {mStr === currentMonthStr ? "(Mes actual)" : ""}
-                </option>
-              );
-            })}
-          </select>
+            className="bg-[#111] border border-[#333] text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-yellow-500 transition-colors cursor-pointer [color-scheme:dark]"
+          />
 
           {selectedMonth && (
             <button
