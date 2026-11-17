@@ -9,7 +9,7 @@ export default async function SalesPage() {
   const session = await getServerSession(authOptions);
   
   const sales = await prisma.operacion.findMany({
-    include: { cliente: true, vehiculo: true, pagos: true, cuotas: true },
+    include: { cliente: true, vehiculo: true, pagos: true, cuotas: true, vendedor: true },
     orderBy: { createdAt: "desc" },
   });
 

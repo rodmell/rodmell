@@ -11,6 +11,7 @@ export default async function CustomersPage() {
           pagos: true,
           cuotas: true,
           vehiculo: true,
+          vendedor: true,
         },
       },
     },

@@ -15,7 +15,8 @@ import {
   BadgeDollarSign, 
   Edit,
   Wallet,
-  Check
+  Check,
+  FolderArchive
 } from "lucide-react";
 import Link from "next/link";
 import { formatThousands, parseThousands } from "@/lib/utils";
@@ -352,6 +353,11 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
     generateReceiptPDF(sale, "VENTA", null, session?.user?.ubicacion);
   };
 
+  const handleDownloadCaratula = async (sale: any) => {
+    const { generateCaratulaPDF } = await import('@/lib/generateCaratula');
+    generateCaratulaPDF(sale, session?.user?.ubicacion);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -663,6 +669,13 @@ export default function SaleClient({ sales, vehicles, customers, session }: { sa
                         <TableCell className="text-right text-yellow-500 font-bold">${s.total.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => handleDownloadCaratula(s)} 
+                              className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded transition-colors" 
+                              title="Carátula de Operación (Portada para Folio/Carpeta Física)"
+                            >
+                              <FolderArchive className="w-4 h-4" />
+                            </button>
                             {s.confirmado ? (
                               <button onClick={() => handleDownloadPDF(s)} className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Descargar Comprobante">
                                 <FileText className="w-4 h-4" />

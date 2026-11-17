@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, X, FolderArchive } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -41,6 +41,30 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [caratulaModalOpen, setCaratulaModalOpen] = useState(false);
+  const [selectedCustomerForCaratula, setSelectedCustomerForCaratula] = useState<any>(null);
+
+  const handleCaratulaCliente = async (cliente: any) => {
+    if (!cliente.operaciones || cliente.operaciones.length === 0) {
+      alert(`El cliente ${cliente.nombreCompleto} no posee operaciones registradas todavía.`);
+      return;
+    }
+    if (cliente.operaciones.length === 1) {
+      const op = cliente.operaciones[0];
+      const opCompleta = { ...op, cliente };
+      const { generateCaratulaPDF } = await import('@/lib/generateCaratula');
+      generateCaratulaPDF(opCompleta);
+      return;
+    }
+    setSelectedCustomerForCaratula(cliente);
+    setCaratulaModalOpen(true);
+  };
+
+  const handleDownloadSingleCaratula = async (op: any, cliente: any) => {
+    const opCompleta = { ...op, cliente };
+    const { generateCaratulaPDF } = await import('@/lib/generateCaratula');
+    generateCaratulaPDF(opCompleta);
+  };
 
   const handleEdit = (c: any) => {
     setEditingId(c.id);
@@ -244,6 +268,21 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
                         <TableCell className="text-zinc-300">{c.email || "-"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleCaratulaCliente(c)}
+                              className={`p-1.5 rounded transition-colors ${
+                                c.operaciones && c.operaciones.length > 0
+                                  ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                                  : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/30"
+                              }`}
+                              title={
+                                c.operaciones && c.operaciones.length > 0
+                                  ? `Carátula de Operación (${c.operaciones.length} ${c.operaciones.length === 1 ? "operación" : "operaciones"})`
+                                  : "El cliente no tiene operaciones registradas"
+                              }
+                            >
+                              <FolderArchive className="w-4 h-4" />
+                            </button>
                             <button onClick={() => handleEdit(c)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#222] rounded transition-colors" title="Editar cliente">
                               <Edit className="w-4 h-4" />
                             </button>
@@ -332,6 +371,57 @@ export default function CustomerClient({ customers }: { customers: any[] }) {
           </div>
         );
       })()}
+
+      {/* Modal para elegir operación cuando el cliente tiene más de una */}
+      <Dialog open={caratulaModalOpen} onOpenChange={setCaratulaModalOpen}>
+        <DialogContent className="bg-[#0a0a0a] border-[#222] text-white sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-400">
+              <FolderArchive className="w-5 h-5" />
+              Seleccionar Carátula de Operación
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              El cliente <strong className="text-white">{selectedCustomerForCaratula?.nombreCompleto}</strong> tiene {selectedCustomerForCaratula?.operaciones?.length} operaciones registradas. Seleccioná cuál querés descargar:
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-3 max-h-[60vh] overflow-y-auto pr-1">
+            {selectedCustomerForCaratula?.operaciones?.map((op: any) => (
+              <div
+                key={op.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-[#222] bg-[#111] hover:border-amber-500/30 transition-colors"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-semibold text-yellow-500">
+                      {op.comprobante || `OP-${op.id.slice(-6).toUpperCase()}`}
+                    </span>
+                    <span className="text-xs text-zinc-400">
+                      {new Date(op.createdAt).toLocaleDateString("es-AR")}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-white mt-0.5">
+                    {op.vehiculo ? `${op.vehiculo.marca} ${op.vehiculo.modelo} (${op.vehiculo.anio})` : "Vehículo"}
+                  </p>
+                  <p className="text-xs text-zinc-400">
+                    Total: <strong className="text-zinc-200">${(op.total || 0).toLocaleString("es-AR")}</strong>
+                    {op.vehiculo?.dominio ? ` • Patente: ${op.vehiculo.dominio}` : ""}
+                  </p>
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleDownloadSingleCaratula(op, selectedCustomerForCaratula)}
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs h-8 px-3 inline-flex items-center gap-1.5"
+                >
+                  <FolderArchive className="w-3.5 h-3.5" />
+                  Descargar
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
